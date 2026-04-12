@@ -46,6 +46,33 @@ class ExpenseRepository {
     await supabase.from(_table).delete().eq('id', expenseId);
   }
 
+  /// Moves all expenses from one partnership to another.
+  /// Used when a user who already has expenses on a pending partnership
+  /// joins another user's partnership.
+  Future<void> migrateExpenses(
+    String fromPartnershipId,
+    String toPartnershipId,
+  ) async {
+    await supabase
+        .from(_table)
+        .update({'partnership_id': toPartnershipId})
+        .eq('partnership_id', fromPartnershipId);
+  }
+
+  /// Moves only the expenses paid by [userId] to another partnership.
+  /// Used when unlinking so the user keeps their own payment history.
+  Future<void> migrateUserExpenses(
+    String fromPartnershipId,
+    String toPartnershipId,
+    String userId,
+  ) async {
+    await supabase
+        .from(_table)
+        .update({'partnership_id': toPartnershipId})
+        .eq('partnership_id', fromPartnershipId)
+        .eq('paid_by', userId);
+  }
+
   /// Returns the net balance for [userId] within the partnership.
   /// Positive = partner owes you. Negative = you owe partner.
   Future<int> getBalanceSummary(

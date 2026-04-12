@@ -21,12 +21,14 @@ class HomePage extends ConsumerWidget {
     final profile = ref.watch(currentProfileProvider);
     final partnerProfile = ref.watch(partnerProfileProvider);
     final partnership = ref.watch(activePartnershipProvider);
+    final currentPship = ref.watch(currentPartnershipProvider);
     final balance = ref.watch(balanceSummaryProvider);
     final recentExpenses = ref.watch(recentExpensesProvider);
     final categoryBreakdown = ref.watch(categoryBreakdownProvider);
 
-    final isPartnershipLoading = partnership.isLoading;
-    final hasPartnership = partnership.valueOrNull != null;
+    final isPartnershipLoading = partnership.isLoading && !partnership.hasValue;
+    final hasActivePartnership = partnership.valueOrNull != null;
+    final hasAnyPartnership = currentPship.valueOrNull != null;
     final myProfile = profile.valueOrNull;
     final myName = myProfile?.displayName ?? '';
     final myIconId = myProfile?.iconId ?? 1;
@@ -38,11 +40,17 @@ class HomePage extends ConsumerWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
+            ref.invalidate(activePartnershipProvider);
+            ref.invalidate(currentPartnershipProvider);
             ref.invalidate(balanceSummaryProvider);
             ref.invalidate(recentExpensesProvider);
-            ref.invalidate(currentProfileProvider);
             ref.invalidate(partnerProfileProvider);
             ref.invalidate(categoryBreakdownProvider);
+            // Wait for key data to reload before dismissing the indicator
+            await Future.wait([
+              ref.read(recentExpensesProvider.future),
+              ref.read(balanceSummaryProvider.future),
+            ]);
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -54,7 +62,7 @@ class HomePage extends ConsumerWidget {
                 const _LoadingCard(),
 
               // Partnership link prompt
-              if (!isPartnershipLoading && !hasPartnership)
+              if (!isPartnershipLoading && !hasActivePartnership)
                 MainCard(
                   child: Center(
                     child: Column(
@@ -83,8 +91,8 @@ class HomePage extends ConsumerWidget {
                   ),
                 ),
 
-              // Balance card (A1)
-              if (hasPartnership)
+              // Balance card (A1) — only when linked
+              if (hasActivePartnership)
                 balance.when(
                   data: (bal) => BalanceCard(
                     myName: myName,
@@ -93,21 +101,46 @@ class HomePage extends ConsumerWidget {
                     partnerIconId: partnerIconId,
                     balance: bal,
                   ),
-                  loading: () => const _LoadingCard(),
+                  loading: () {
+                    // Show previous data while refreshing
+                    final prev = balance.valueOrNull;
+                    if (prev != null) {
+                      return BalanceCard(
+                        myName: myName,
+                        myIconId: myIconId,
+                        partnerName: partnerName,
+                        partnerIconId: partnerIconId,
+                        balance: prev,
+                      );
+                    }
+                    return const _LoadingCard();
+                  },
                   error: (e, _) => Center(child: Text('エラー: $e')),
                 ),
 
-              // Category chart (C2)
-              if (hasPartnership)
+              // Category chart (C2) — show even when pending
+              if (hasAnyPartnership)
                 categoryBreakdown.when(
                   data: (breakdown) => breakdown.isNotEmpty
                       ? CategoryChartCard(
                           breakdown: breakdown,
                           month: now,
                           userName: myName,
+                          onTap: () => context.go('/stats'),
                         )
                       : const SizedBox.shrink(),
-                  loading: () => const SizedBox.shrink(),
+                  loading: () {
+                    final prev = categoryBreakdown.valueOrNull;
+                    if (prev != null && prev.isNotEmpty) {
+                      return CategoryChartCard(
+                        breakdown: prev,
+                        month: now,
+                        userName: myName,
+                        onTap: () => context.go('/stats'),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
                   error: (e, _) => Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text('カテゴリ取得エラー: $e'),
@@ -160,11 +193,35 @@ class HomePage extends ConsumerWidget {
                       }).toList(),
                     );
                   },
-                  loading: () => const Center(
+                  loading: () {
+                    final prev = recentExpenses.valueOrNull;
+                    if (prev != null && prev.isNotEmpty) {
+                      final currentUser = ref.read(currentUserProvider);
+                      final currentProfile = profile.valueOrNull;
+                      return Column(
+                        children: prev.map((expense) {
+                          final isMe = expense.paidBy == currentUser?.id;
+                          final myBurdenPct = isMe
+                              ? (expense.ratio * 100).round()
+                              : ((1 - expense.ratio) * 100).round();
+                          return ExpenseSimpleTile(
+                            payerName: isMe
+                                ? (currentProfile?.displayName ?? '')
+                                : partnerName,
+                            payerIconId: isMe ? myIconId : partnerIconId,
+                            amount: expense.amount,
+                            burdenPercent: myBurdenPct,
+                          );
+                        }).toList(),
+                      );
+                    }
+                    return const Center(
                       child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator(),
-                  )),
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  },
                   error: (e, _) => Center(child: Text('エラー: $e')),
                 ),
               ),
@@ -175,8 +232,6 @@ class HomePage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/expense-input'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
         icon: const Icon(CupertinoIcons.pencil),
         label: const Text('支払を入力する'),
       ),

@@ -24,11 +24,13 @@ class CategoryChartCard extends StatelessWidget {
     required this.breakdown,
     required this.month,
     required this.userName,
+    this.onTap,
   });
 
   final List<CategoryAmount> breakdown;
   final DateTime month;
   final String userName;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +44,7 @@ class CategoryChartCard extends StatelessWidget {
         breakdown.fold<int>(0, (sum, e) => sum + e.amount);
 
     return MainCard(
+      onTap: onTap,
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

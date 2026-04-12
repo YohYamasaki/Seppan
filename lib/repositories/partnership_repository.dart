@@ -97,6 +97,27 @@ class PartnershipRepository {
     return Partnership.fromJson(data);
   }
 
+  /// Returns the current partnership (active first, then pending).
+  Future<Partnership?> getCurrentPartnership(String userId) async {
+    final active = await getActivePartnership(userId);
+    if (active != null) return active;
+    return getPendingPartnership(userId);
+  }
+
+  /// Returns the most recently archived partnership where [userId] was a member.
+  Future<Partnership?> getLastArchivedPartnership(String userId) async {
+    final data = await _maybeSingle(
+      supabase
+          .from(_table)
+          .select()
+          .eq('status', 'archived')
+          .or('user1_id.eq.$userId,user2_id.eq.$userId')
+          .order('created_at', ascending: false),
+    );
+    if (data == null) return null;
+    return Partnership.fromJson(data);
+  }
+
   Stream<Partnership> watchPartnership(String partnershipId) {
     return supabase
         .from(_table)

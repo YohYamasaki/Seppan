@@ -126,12 +126,16 @@ class SettingsPage extends ConsumerWidget {
     // Do NOT dispose controller here — the dialog's TextField may still
     // reference it during unmount (focus change → clearComposing).
 
-    if (result == true) {
-      // Delete profile then sign out
-      final user = ref.read(currentUserProvider);
-      if (user != null) {
-        await ref.read(profileRepositoryProvider).deleteProfile(user.id);
-        await ref.read(authRepositoryProvider).signOut();
+    if (result == true && context.mounted) {
+      try {
+        await ref.read(authRepositoryProvider).deleteAccount();
+        if (context.mounted) context.go('/sign-in');
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('アカウント削除に失敗しました: $e')),
+          );
+        }
       }
     }
   }

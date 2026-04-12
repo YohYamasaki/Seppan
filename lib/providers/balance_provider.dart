@@ -12,7 +12,7 @@ part 'balance_provider.g.dart';
 /// Positive = partner owes you. Negative = you owe partner.
 @riverpod
 Future<int> balanceSummary(Ref ref) async {
-  final partnership = await ref.watch(activePartnershipProvider.future);
+  final partnership = await ref.watch(currentPartnershipProvider.future);
   final user = ref.watch(currentUserProvider);
   if (partnership == null || user == null) return 0;
   return ref.watch(expenseRepositoryProvider).getBalanceSummary(
@@ -24,7 +24,7 @@ Future<int> balanceSummary(Ref ref) async {
 /// Category breakdown for current month (current user's burden).
 @riverpod
 Future<List<CategoryAmount>> categoryBreakdown(Ref ref) async {
-  final partnership = await ref.watch(activePartnershipProvider.future);
+  final partnership = await ref.watch(currentPartnershipProvider.future);
   final user = ref.watch(currentUserProvider);
   if (partnership == null || user == null) return [];
   return ref.watch(expenseRepositoryProvider).getCategoryBreakdown(

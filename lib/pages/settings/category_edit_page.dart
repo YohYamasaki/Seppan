@@ -19,11 +19,20 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    _initAndLoad();
+  }
+
+  Future<void> _initAndLoad() async {
+    // Ensure a partnership exists so categories are available
+    await _resolvePartnershipId();
+    ref.invalidate(currentPartnershipProvider);
+    ref.invalidate(categoriesProvider);
+    await _loadCategories();
   }
 
   Future<void> _loadCategories() async {
     final cats = await ref.read(categoriesProvider.future);
+    if (!mounted) return;
     setState(() {
       _categories = List.of(cats);
       _loading = false;
@@ -31,7 +40,7 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   }
 
   Future<String?> _resolvePartnershipId() async {
-    final active = await ref.read(activePartnershipProvider.future);
+    final active = await ref.read(currentPartnershipProvider.future);
     if (active != null) return active.id;
 
     final user = ref.read(currentUserProvider);

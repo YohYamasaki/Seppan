@@ -45,7 +45,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   }
 
   Future<void> _loadExpenses() async {
-    final partnership = await ref.read(activePartnershipProvider.future);
+    final partnership = await ref.read(currentPartnershipProvider.future);
     if (partnership == null) return;
 
     setState(() => _loading = true);

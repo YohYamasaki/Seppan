@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/expense_provider.dart';
 import '../../providers/partnership_provider.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {
@@ -26,6 +27,11 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
 
+    // Look up pending partnership before joining (it won't be pending after)
+    final pending = await ref
+        .read(partnershipRepositoryProvider)
+        .getPendingPartnership(user.id);
+
     final result = await ref
         .read(partnershipRepositoryProvider)
         .joinPartnership(code.toUpperCase(), user.id);
@@ -33,11 +39,24 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
     if (!mounted) return;
 
     if (result != null) {
+      // Migrate expenses from old pending partnership to the new active one
+      if (pending != null && pending.id != result.id) {
+        await ref.read(expenseRepositoryProvider).migrateExpenses(
+              pending.id,
+              result.id,
+            );
+        await ref
+            .read(partnershipRepositoryProvider)
+            .archivePartnership(pending.id);
+      }
       ref.invalidate(activePartnershipProvider);
+      ref.invalidate(currentPartnershipProvider);
+      ref.invalidate(recentExpensesProvider);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('リンクが完了しました！')),
       );
-      context.pop();
+      context.go('/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('該当するコードが見つかりません')),

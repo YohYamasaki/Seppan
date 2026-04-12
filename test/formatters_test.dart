@@ -52,11 +52,11 @@ void main() {
 
   group('ratioDescription', () {
     test('100% is おごり', () {
-      expect(ratioDescription(1.0, '太郎'), '（太郎さんのおごり）');
+      expect(ratioDescription(1.0, '太郎'), '太郎さんのおごり');
     });
 
     test('0% is 立て替え', () {
-      expect(ratioDescription(0.0, '太郎'), '（太郎さんが立て替え）');
+      expect(ratioDescription(0.0, '太郎'), '太郎さんが立て替え');
     });
 
     test('50% returns empty', () {

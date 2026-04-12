@@ -41,7 +41,7 @@ void main() {
   });
 
   group('Logged in, profile loading', () {
-    test('does NOT redirect to /profile-setup while loading', () {
+    test('redirects to /profile-setup from /home while loading', () {
       expect(
         routerRedirect(
           location: '/home',
@@ -49,14 +49,38 @@ void main() {
           isProfileLoading: true,
           hasProfile: false,
         ),
-        isNull, // Stay on current page, don't flash profile-setup
+        '/profile-setup', // Avoid flashing home before profile is ready
       );
     });
 
-    test('does not redirect anywhere while loading', () {
+    test('redirects to /profile-setup from /settings while loading', () {
       expect(
         routerRedirect(
           location: '/settings',
+          isLoggedIn: true,
+          isProfileLoading: true,
+          hasProfile: false,
+        ),
+        '/profile-setup',
+      );
+    });
+
+    test('stays on /sign-in while loading', () {
+      expect(
+        routerRedirect(
+          location: '/sign-in',
+          isLoggedIn: true,
+          isProfileLoading: true,
+          hasProfile: false,
+        ),
+        isNull,
+      );
+    });
+
+    test('stays on /profile-setup while loading', () {
+      expect(
+        routerRedirect(
+          location: '/profile-setup',
           isLoggedIn: true,
           isProfileLoading: true,
           hasProfile: false,

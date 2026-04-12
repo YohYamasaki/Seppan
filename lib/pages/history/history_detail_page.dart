@@ -154,6 +154,7 @@ class HistoryDetailPage extends ConsumerWidget {
                             .deleteExpense(expenseId);
                         ref.invalidate(recentExpensesProvider);
                         ref.invalidate(balanceSummaryProvider);
+                        ref.invalidate(categoryBreakdownProvider);
                         if (context.mounted) context.pop();
                       }
                     },

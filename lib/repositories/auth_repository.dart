@@ -9,6 +9,8 @@ class AuthRepository {
     return supabase.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: 'io.supabase.seppan://login-callback/',
+      authScreenLaunchMode: LaunchMode.externalApplication,
+      queryParams: {'prompt': 'select_account'},
     );
   }
 
@@ -38,6 +40,23 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
+    await supabase.auth.signOut();
+  }
+
+  /// Deletes all user data then signs out.
+  ///
+  /// Uses the server-side `delete_user_data` RPC (SECURITY DEFINER)
+  /// to bypass RLS and cleanly remove all data in FK-safe order:
+  ///   expenses → categories → partnerships → profiles
+  Future<void> deleteAccount() async {
+    final userId = currentUser?.id;
+    if (userId == null) throw StateError('Not logged in');
+
+    await supabase.rpc(
+      'delete_user_data',
+      params: {'target_user_id': userId},
+    );
+
     await supabase.auth.signOut();
   }
 

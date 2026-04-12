@@ -47,6 +47,14 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
       final user = ref.read(currentUserProvider);
       _payerUserId = user?.id;
     }
+    _ensurePartnership();
+  }
+
+  /// Ensures a partnership exists so that categories can load.
+  Future<void> _ensurePartnership() async {
+    await _resolvePartnershipId();
+    ref.invalidate(currentPartnershipProvider);
+    ref.invalidate(categoriesProvider);
   }
 
   @override
@@ -76,18 +84,15 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
   }
 
   /// Returns the partnership to associate with the expense.
-  /// Uses active partnership first, falls back to pending, creates one if needed.
+  /// Uses currentPartnership (active or pending), creates one if needed.
   Future<String> _resolvePartnershipId() async {
-    final active = await ref.read(activePartnershipProvider.future);
-    if (active != null) return active.id;
+    final current = await ref.read(currentPartnershipProvider.future);
+    if (current != null) return current.id;
 
     final user = ref.read(currentUserProvider);
     if (user == null) throw StateError('Not logged in');
 
     final repo = ref.read(partnershipRepositoryProvider);
-    final pending = await repo.getPendingPartnership(user.id);
-    if (pending != null) return pending.id;
-
     await repo.archiveOldPendingPartnerships(user.id);
     final created = await repo.createPartnership(user.id);
     return created.id;
@@ -120,6 +125,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
       }
       ref.invalidate(recentExpensesProvider);
       ref.invalidate(balanceSummaryProvider);
+      ref.invalidate(categoryBreakdownProvider);
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
@@ -136,7 +142,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final profile = ref.watch(currentProfileProvider).valueOrNull;
-    final partnership = ref.watch(activePartnershipProvider).valueOrNull;
+    final partnership = ref.watch(currentPartnershipProvider).valueOrNull;
     final partnerProfile = ref.watch(partnerProfileProvider).valueOrNull;
     final categories = ref.watch(categoriesProvider);
 
@@ -145,7 +151,6 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
     final partnerName = partnerProfile?.displayName ?? 'パートナー';
     final partnerIconId = partnerProfile?.iconId ?? 1;
     final isMyPayment = _payerUserId == user?.id;
-    final currentPayerName = isMyPayment ? myName : partnerName;
 
     return Scaffold(
       appBar: AppBar(
@@ -339,7 +344,6 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                   final myW = barWidth * myPercent;
                   const dur = Duration(milliseconds: 150);
                   const curve = Curves.easeOutExpo;
-                  final desc = ratioDescription(_ratio, currentPayerName);
                   final atEdge = myPercent <= 0.05 || myPercent >= 0.95;
                   final gap = atEdge ? 0.0 : 4.0;
                   final innerR = Radius.circular(atEdge ? 24 : 4);
@@ -580,20 +584,6 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                             );
                           },
                         ),
-                        // Description (fixed height to prevent layout shift)
-                        SizedBox(
-                          height: 22,
-                          child: Center(
-                            child: AnimatedOpacity(
-                              duration: const Duration(milliseconds: 150),
-                              opacity: desc.isNotEmpty ? 1.0 : 0.0,
-                              child: Text(
-                                desc.isNotEmpty ? desc : ' ',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   );
@@ -667,7 +657,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                 onPressed: _loading ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
-const _primaryColor = Color(0xFFFF8D00);
+const _seedColor = Color(0xFFE6B251);
 
 ThemeData seppanLightTheme() {
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: _primaryColor,
+    seedColor: _seedColor,
     brightness: Brightness.light,
   );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: colorScheme.surfaceContainerLowest,
+    scaffoldBackgroundColor: colorScheme.surface,
     appBarTheme: AppBarTheme(
       centerTitle: true,
       elevation: 0,
       scrolledUnderElevation: 1,
-      backgroundColor: colorScheme.surfaceContainerLowest,
+      backgroundColor: colorScheme.surface,
       foregroundColor: colorScheme.onSurface,
       titleTextStyle: TextStyle(
         fontWeight: FontWeight.w600,
@@ -45,6 +45,8 @@ ThemeData seppanLightTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
+        backgroundColor: colorScheme.tertiary,
+        foregroundColor: colorScheme.onTertiary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -53,6 +55,8 @@ ThemeData seppanLightTheme() {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.tertiary,
+        foregroundColor: colorScheme.onTertiary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -86,12 +90,30 @@ ThemeData seppanLightTheme() {
       thickness: 0.5,
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: colorScheme.primaryContainer,
-      foregroundColor: colorScheme.onPrimaryContainer,
+      backgroundColor: colorScheme.tertiary,
+      foregroundColor: colorScheme.onTertiary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
       elevation: 2,
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      indicatorColor: colorScheme.secondaryContainer,
+      backgroundColor: colorScheme.surfaceContainer,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: colorScheme.inverseSurface,
+      contentTextStyle: TextStyle(color: colorScheme.onInverseSurface),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      behavior: SnackBarBehavior.floating,
     ),
     textTheme: TextTheme(
       displayLarge: TextStyle(

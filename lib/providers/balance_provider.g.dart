@@ -6,7 +6,7 @@ part of 'balance_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$balanceSummaryHash() => r'e7ac98f594494c62b94c37224e5fdafc1dca467f';
+String _$balanceSummaryHash() => r'bb9d3233b8aee59e7e6c0aa9e61317ab75e5ae83';
 
 /// Net balance for current user.
 /// Positive = partner owes you. Negative = you owe partner.
@@ -26,7 +26,7 @@ final balanceSummaryProvider = AutoDisposeFutureProvider<int>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef BalanceSummaryRef = AutoDisposeFutureProviderRef<int>;
-String _$categoryBreakdownHash() => r'531d98e82c4a25e6fb32765efe5f4c8bd2022c97';
+String _$categoryBreakdownHash() => r'911754f7af83f7beb9764147b34098c4a90d6eb8';
 
 /// Category breakdown for current month (current user's burden).
 ///

@@ -36,7 +36,7 @@ class _CategoryDetailPageState extends ConsumerState<CategoryDetailPage> {
   }
 
   Future<void> _loadData() async {
-    final partnership = await ref.read(activePartnershipProvider.future);
+    final partnership = await ref.read(currentPartnershipProvider.future);
     if (partnership == null) return;
 
     setState(() => _loading = true);

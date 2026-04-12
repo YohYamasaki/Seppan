@@ -42,7 +42,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
   }
 
   Future<void> _loadData() async {
-    final partnership = await ref.read(activePartnershipProvider.future);
+    final partnership = await ref.read(currentPartnershipProvider.future);
     final user = ref.read(currentUserProvider);
     if (partnership == null || user == null) return;
 

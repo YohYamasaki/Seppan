@@ -24,7 +24,7 @@ final expenseRepositoryProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ExpenseRepositoryRef = AutoDisposeProviderRef<ExpenseRepository>;
-String _$recentExpensesHash() => r'e75d864f3fc6ba16a625a991b8e6d878a45c87e9';
+String _$recentExpensesHash() => r'6b9edea88566f2dddb982fdadc28b94fb5e89eb0';
 
 /// See also [recentExpenses].
 @ProviderFor(recentExpenses)

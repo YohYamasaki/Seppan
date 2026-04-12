@@ -135,15 +135,15 @@ class BalanceCard extends StatelessWidget {
 
   Color _statusColor(ColorScheme colorScheme) {
     if (balance == 0) return colorScheme.tertiary;
-    if (balance > 0) return colorScheme.primary;
+    if (balance > 0) return Colors.green;
     return colorScheme.error;
   }
 
   String get _statusMessage {
     if (balance == 0) return '精算済みです';
     if (balance > 0) {
-      return '$partnerNameさんが${formatJpy(balance)}支払ってください';
+      return '$myNameさんが${formatJpy(balance)}多く支払っています';
     }
-    return '$myNameさんが${formatJpy(balance.abs())}支払ってください';
+    return '$myNameさんが${formatJpy(balance.abs())}分支払ってください';
   }
 }

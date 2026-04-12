@@ -20,7 +20,6 @@ import '../pages/settings/profile_edit_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/shell/main_shell.dart';
 import '../providers/auth_provider.dart';
-import '../providers/partnership_provider.dart';
 import '../utils/router_redirect.dart';
 
 part 'router.g.dart';
@@ -29,10 +28,9 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 @riverpod
 GoRouter router(Ref ref) {
-  // Watch these to rebuild router on auth/profile/partnership changes
+  // Watch these to rebuild router on auth/profile changes
   ref.watch(authStateChangesProvider);
   final profile = ref.watch(currentProfileProvider);
-  ref.watch(activePartnershipProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,

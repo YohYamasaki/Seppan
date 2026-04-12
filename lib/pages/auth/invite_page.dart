@@ -7,10 +7,13 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../models/partnership.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/expense_provider.dart';
 import '../../providers/partnership_provider.dart';
 
 class InvitePage extends ConsumerStatefulWidget {
-  const InvitePage({super.key});
+  const InvitePage({super.key, this.showScaffold = true});
+
+  final bool showScaffold;
 
   @override
   ConsumerState<InvitePage> createState() => _InvitePageState();
@@ -83,9 +86,11 @@ class _InvitePageState extends ConsumerState<InvitePage> {
         .listen((partnership) {
       if (partnership.status == 'active' && mounted) {
         ref.invalidate(activePartnershipProvider);
+        ref.invalidate(currentPartnershipProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('パートナーとリンクしました！')),
         );
+        context.go('/home');
       }
     });
   }
@@ -106,11 +111,27 @@ class _InvitePageState extends ConsumerState<InvitePage> {
         .read(partnershipRepositoryProvider)
         .joinPartnership(code, user.id);
 
-    if (result != null && mounted) {
+    if (result != null) {
+      // Migrate expenses from old pending partnership to the new active one
+      if (_partnership != null && _partnership!.id != result.id) {
+        await ref.read(expenseRepositoryProvider).migrateExpenses(
+              _partnership!.id,
+              result.id,
+            );
+        // Archive the old pending partnership
+        await ref
+            .read(partnershipRepositoryProvider)
+            .archivePartnership(_partnership!.id);
+      }
       ref.invalidate(activePartnershipProvider);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('リンクが完了しました！')),
-      );
+      ref.invalidate(currentPartnershipProvider);
+      ref.invalidate(recentExpensesProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('リンクが完了しました！')),
+        );
+        context.go('/home');
+      }
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('該当するコードが見つかりません')),
@@ -121,6 +142,9 @@ class _InvitePageState extends ConsumerState<InvitePage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
+      if (!widget.showScaffold) {
+        return const Center(child: CircularProgressIndicator());
+      }
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -128,29 +152,7 @@ class _InvitePageState extends ConsumerState<InvitePage> {
 
     final inviteCode = _partnership?.inviteCode ?? '';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('パートナーとリンク'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/home');
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await ref.read(authRepositoryProvider).signOut();
-            },
-            child: const Text('ログアウト'),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
+    final body = SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           children: [
@@ -231,7 +233,33 @@ class _InvitePageState extends ConsumerState<InvitePage> {
             ),
           ],
         ),
+      );
+
+    if (!widget.showScaffold) return body;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('パートナーとリンク'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await ref.read(authRepositoryProvider).signOut();
+            },
+            child: const Text('ログアウト'),
+          ),
+        ],
       ),
+      body: body,
     );
   }
 }

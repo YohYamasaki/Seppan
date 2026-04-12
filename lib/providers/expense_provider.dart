@@ -14,7 +14,7 @@ ExpenseRepository expenseRepository(Ref ref) {
 
 @riverpod
 Future<List<Expense>> recentExpenses(Ref ref) async {
-  final partnership = await ref.watch(activePartnershipProvider.future);
+  final partnership = await ref.watch(currentPartnershipProvider.future);
   if (partnership == null) return [];
   return ref.watch(expenseRepositoryProvider).getExpenses(
         partnership.id,

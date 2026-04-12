@@ -12,49 +12,110 @@ class SignInPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('ログイン')),
-      body: Center(
+      body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'Seppan',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+              const Spacer(flex: 3),
+
+              // App icon
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.2),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset('assets/icon.png'),
                 ),
               ),
-              const Gap(48),
+              const Gap(24),
+
+              // App name
+              Text(
+                'Seppan',
+                style: theme.textTheme.displayLarge?.copyWith(
+                  fontSize: 32,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const Gap(8),
+              Text(
+                'ふたりの支出をシンプルに',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+
+              const Spacer(flex: 3),
+
+              // Section label
+              Text(
+                'ログイン / 新規登録',
+                style: theme.textTheme.bodySmall,
+              ),
+              const Gap(16),
               _SignInButton(
-                label: 'Googleでログイン',
-                icon: Image.asset('assets/logos/google.png', height: 24),
+                label: 'Googleで続ける',
+                icon: Image.asset('assets/logos/google.png', height: 20),
+                backgroundColor: colorScheme.surfaceContainerHigh,
+                textColor: colorScheme.onSurface,
                 onPressed: () async {
-                  await ref.read(authRepositoryProvider).signInWithGoogle();
+                  try {
+                    await ref.read(authRepositoryProvider).signInWithGoogle();
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('認証に失敗しました: $e')),
+                      );
+                    }
+                  }
                 },
               ),
               if (!Platform.isAndroid) ...[
-                const Gap(16),
+                const Gap(12),
                 _SignInButton(
-                  label: 'Appleでサインイン',
-                  icon: Image.asset('assets/logos/apple.png', height: 24),
+                  label: 'Appleで続ける',
+                  icon: Image.asset('assets/logos/apple.png', height: 20),
                   backgroundColor: Colors.black,
                   textColor: Colors.white,
                   onPressed: () async {
-                    await ref.read(authRepositoryProvider).signInWithApple();
+                    try {
+                      await ref.read(authRepositoryProvider).signInWithApple();
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('認証に失敗しました: $e')),
+                        );
+                      }
+                    }
                   },
                 ),
               ],
-              const Gap(16),
+              const Gap(12),
               _SignInButton(
-                label: 'メールでログイン',
-                icon: const Icon(Icons.mail_outline),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                textColor: Colors.white,
+                label: 'メールで続ける',
+                icon: Icon(Icons.mail_outline, size: 20,
+                    color: colorScheme.onPrimary),
+                backgroundColor: colorScheme.primary,
+                textColor: colorScheme.onPrimary,
                 onPressed: () => context.push('/sign-in/email'),
               ),
+
+              const Spacer(flex: 2),
             ],
           ),
         ),
@@ -82,21 +143,25 @@ class _SignInButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 48,
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
+      height: 52,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
           backgroundColor: backgroundColor,
-          foregroundColor: textColor ?? Colors.black87,
-          side: backgroundColor != null
-              ? BorderSide.none
-              : const BorderSide(color: Colors.black26),
+          foregroundColor: textColor,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
           ),
+          elevation: 0,
         ),
-        icon: icon,
-        label: Text(label),
         onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            icon,
+            const Gap(12),
+            Text(label, style: const TextStyle(fontSize: 15)),
+          ],
+        ),
       ),
     );
   }

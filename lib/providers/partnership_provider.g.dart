@@ -44,6 +44,30 @@ final activePartnershipProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ActivePartnershipRef = AutoDisposeFutureProviderRef<Partnership?>;
+String _$currentPartnershipHash() =>
+    r'5c1614aad809453088a512fb41ea7b0a9d256c58';
+
+/// Current partnership: active first, falls back to pending.
+/// If neither exists, creates a new pending partnership and migrates
+/// the user's expenses from any archived partnership (lazy migration
+/// for the partner who was unlinked by the other side).
+///
+/// Copied from [currentPartnership].
+@ProviderFor(currentPartnership)
+final currentPartnershipProvider =
+    AutoDisposeFutureProvider<Partnership?>.internal(
+      currentPartnership,
+      name: r'currentPartnershipProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$currentPartnershipHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CurrentPartnershipRef = AutoDisposeFutureProviderRef<Partnership?>;
 String _$partnerProfileHash() => r'f04d6234b207a4eba69026793957499a869dac3b';
 
 /// See also [partnerProfile].
@@ -204,7 +228,7 @@ class _PartnershipStreamProviderElement
       (origin as PartnershipStreamProvider).partnershipId;
 }
 
-String _$categoriesHash() => r'd1ecb068d74073eb65c98e492ad54d2174ab818d';
+String _$categoriesHash() => r'f4ef265f870d64e100d65dbac33deef997899f1f';
 
 /// See also [categories].
 @ProviderFor(categories)
