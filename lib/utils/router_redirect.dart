@@ -16,11 +16,9 @@ String? routerRedirect({
     return isAuthRoute ? null : '/sign-in';
   }
 
-  // Still loading profile — keep on auth routes, redirect away from main routes
-  if (isProfileLoading) {
-    if (isAuthRoute) return null;
-    return '/profile-setup';
-  }
+  // Still loading profile — stay on current route until resolved.
+  // Redirecting during loading causes screen flashes (e.g. home → profile-setup → home).
+  if (isProfileLoading) return null;
 
   // Logged in but no profile
   if (!hasProfile) {

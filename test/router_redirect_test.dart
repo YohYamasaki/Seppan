@@ -41,7 +41,7 @@ void main() {
   });
 
   group('Logged in, profile loading', () {
-    test('redirects to /profile-setup from /home while loading', () {
+    test('stays on /home while loading (no flash to profile-setup)', () {
       expect(
         routerRedirect(
           location: '/home',
@@ -49,11 +49,11 @@ void main() {
           isProfileLoading: true,
           hasProfile: false,
         ),
-        '/profile-setup', // Avoid flashing home before profile is ready
+        isNull, // Stay put — redirecting during load causes screen flashes
       );
     });
 
-    test('redirects to /profile-setup from /settings while loading', () {
+    test('stays on /settings while loading', () {
       expect(
         routerRedirect(
           location: '/settings',
@@ -61,7 +61,7 @@ void main() {
           isProfileLoading: true,
           hasProfile: false,
         ),
-        '/profile-setup',
+        isNull,
       );
     });
 

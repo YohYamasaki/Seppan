@@ -16,6 +16,7 @@ import '../pages/stats/stats_page.dart';
 import '../pages/expense_input/expense_input_page.dart';
 import '../pages/settings/category_edit_page.dart';
 import '../pages/settings/partnership_manage_page.dart';
+import '../pages/settings/privacy_policy_page.dart';
 import '../pages/settings/profile_edit_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/shell/main_shell.dart';
@@ -28,15 +29,30 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 @riverpod
 GoRouter router(Ref ref) {
-  // Watch these to rebuild router on auth/profile changes
-  ref.watch(authStateChangesProvider);
-  final profile = ref.watch(currentProfileProvider);
+  // Use listen + refreshListenable so the GoRouter instance is created once.
+  // ref.watch would recreate the entire GoRouter on every state change,
+  // resetting navigation to initialLocation and causing screen flashes.
+  final refreshNotifier = ValueNotifier<int>(0);
+  ref.listen(authStateChangesProvider, (_, __) => refreshNotifier.value++);
+  // Only refresh when profile loading completes (loading → data/error),
+  // NOT on every state change. An invalidate (data → loading) must not
+  // trigger a refresh — that would cause GoRouter to rebuild the route
+  // tree and cancel in-progress navigation (e.g. context.pop).
+  ref.listen(currentProfileProvider, (prev, next) {
+    final wasLoading = prev == null || prev.isLoading;
+    if (wasLoading && !next.isLoading) {
+      refreshNotifier.value++;
+    }
+  });
+  ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/home',
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
       final user = ref.read(currentUserProvider);
+      final profile = ref.read(currentProfileProvider);
       return routerRedirect(
         location: state.matchedLocation,
         isLoggedIn: user != null,
@@ -143,6 +159,11 @@ GoRouter router(Ref ref) {
                     path: 'partnership',
                     builder: (context, state) =>
                         const PartnershipManagePage(),
+                  ),
+                  GoRoute(
+                    path: 'privacy-policy',
+                    builder: (context, state) =>
+                        const PrivacyPolicyPage(),
                   ),
                 ],
               ),
