@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,8 +26,10 @@ Stream<AuthState> authStateChanges(Ref ref) {
 
 @riverpod
 User? currentUser(Ref ref) {
-  ref.watch(authStateChangesProvider);
-  return ref.read(authRepositoryProvider).currentUser;
+  final authState = ref.watch(authStateChangesProvider);
+  final user = ref.read(authRepositoryProvider).currentUser;
+  debugPrint('[currentUser] authState=${authState.valueOrNull?.event}, uid=${user?.id}');
+  return user;
 }
 
 @riverpod

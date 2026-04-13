@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -6,7 +7,6 @@ import '../models/partnership.dart';
 import '../models/profile.dart';
 import '../repositories/partnership_repository.dart';
 import 'auth_provider.dart';
-import 'expense_provider.dart';
 
 part 'partnership_provider.g.dart';
 
@@ -27,33 +27,25 @@ Future<Partnership?> activePartnership(Ref ref) async {
 }
 
 /// Current partnership: active first, falls back to pending.
-/// If neither exists, creates a new pending partnership and migrates
-/// the user's expenses from any archived partnership (lazy migration
-/// for the partner who was unlinked by the other side).
+/// If neither exists, creates a new pending partnership.
 @riverpod
 Future<Partnership?> currentPartnership(Ref ref) async {
   final user = ref.watch(currentUserProvider);
-  if (user == null) return null;
+  if (user == null) {
+    debugPrint('[currentPartnership] user is null');
+    return null;
+  }
   try {
     final repo = ref.watch(partnershipRepositoryProvider);
+    debugPrint('[currentPartnership] fetching for uid=${user.id}');
     final existing = await repo.getCurrentPartnership(user.id);
+    debugPrint('[currentPartnership] existing=${existing?.id}, status=${existing?.status}');
     if (existing != null) return existing;
 
-    // No active/pending — create one and migrate expenses from archived
-    final archived = await repo.getLastArchivedPartnership(user.id);
     await repo.archiveOldPendingPartnerships(user.id);
-    final newPartnership = await repo.createPartnership(user.id);
-
-    if (archived != null) {
-      await ref.read(expenseRepositoryProvider).migrateUserExpenses(
-            archived.id,
-            newPartnership.id,
-            user.id,
-          );
-    }
-
-    return newPartnership;
-  } catch (_) {
+    return await repo.createPartnership(user.id);
+  } catch (e) {
+    debugPrint('[currentPartnership] error: $e');
     return null;
   }
 }

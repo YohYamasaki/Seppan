@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/encryption_provider.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -34,6 +35,11 @@ class SettingsPage extends ConsumerWidget {
             icon: Icons.people,
             title: 'パートナーシップ管理',
             onTap: () => context.push('/settings/partnership'),
+          ),
+          _SettingsTile(
+            icon: Icons.lock_outline,
+            title: 'パスワードの変更',
+            onTap: () => context.push('/settings/encryption'),
           ),
           _SettingsTile(
             icon: Icons.logout,
@@ -89,6 +95,7 @@ class SettingsPage extends ConsumerWidget {
       ),
     );
     if (result == true) {
+      await ref.read(encryptionKeyNotifierProvider.notifier).clearAll();
       await ref.read(authRepositoryProvider).signOut();
     }
   }
@@ -146,6 +153,7 @@ class SettingsPage extends ConsumerWidget {
         //   - deletes profile
         // No client-side pre-processing needed.
         await ref.read(authRepositoryProvider).deleteAccount();
+        await ref.read(encryptionKeyNotifierProvider.notifier).clearAll();
         if (context.mounted) context.go('/sign-in');
       } catch (e) {
         if (context.mounted) {

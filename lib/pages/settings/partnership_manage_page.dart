@@ -98,33 +98,6 @@ class PartnershipManagePage extends ConsumerWidget {
                 ),
                 const Gap(16),
 
-                // Invite code card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(Icons.qr_code,
-                            color: colorScheme.onSurfaceVariant),
-                        const Gap(12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('招待コード',
-                                style: theme.textTheme.bodySmall),
-                            const Gap(2),
-                            Text(p.inviteCode,
-                                style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 4)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
                 const Spacer(),
 
                 // Unlink button
@@ -154,7 +127,7 @@ class PartnershipManagePage extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('パートナーシップを解除しますか？'),
-        content: const Text('お互いが入力した支払い履歴はそれぞれ保持されます。'),
+        content: const Text('これまでに入力した支払い履歴はお互いのアカウントからすべて削除されます。この操作は取り消せません。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -169,36 +142,30 @@ class PartnershipManagePage extends ConsumerWidget {
       ),
     );
     if (result == true) {
-      final user = ref.read(currentUserProvider);
-      if (user == null) return;
-
       final repo = ref.read(partnershipRepositoryProvider);
-      final partnershipId = partnership.id;
 
-      // Create a new pending partnership for the current user
-      await repo.archiveOldPendingPartnerships(user.id);
-      final newPartnership = await repo.createPartnership(user.id);
+      try {
+        // Delete all expenses for this partnership before archiving.
+        final expenseRepo = ref.read(expenseRepositoryProvider);
+        await expenseRepo.deleteAllExpenses(partnership.id);
 
-      // Migrate the user's own expenses to the new partnership
-      await ref.read(expenseRepositoryProvider).migrateUserExpenses(
-            partnershipId,
-            newPartnership.id,
-            user.id,
+        await repo.archivePartnership(partnership.id);
+
+        ref.invalidate(activePartnershipProvider);
+        ref.invalidate(currentPartnershipProvider);
+        ref.invalidate(partnerProfileProvider);
+        ref.invalidate(recentExpensesProvider);
+        ref.invalidate(balanceSummaryProvider);
+        ref.invalidate(categoryBreakdownProvider);
+        if (context.mounted) {
+          context.go('/home');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('パートナーシップの解除に失敗しました: $e')),
           );
-
-      // Archive the old partnership.
-      // The partner's expenses will be lazily migrated when they open the app
-      // (handled by currentPartnershipProvider).
-      await repo.archivePartnership(partnershipId);
-
-      ref.invalidate(activePartnershipProvider);
-      ref.invalidate(currentPartnershipProvider);
-      ref.invalidate(partnerProfileProvider);
-      ref.invalidate(recentExpensesProvider);
-      ref.invalidate(balanceSummaryProvider);
-      ref.invalidate(categoryBreakdownProvider);
-      if (context.mounted) {
-        context.go('/home');
+        }
       }
     }
   }

@@ -48,7 +48,7 @@ class ProfileRepository {
       if (response is Map<String, dynamic>) return response;
       return null;
     } on PostgrestException catch (e) {
-      if (e.code == '406' || e.message.contains('PGRST116')) {
+      if (e.code == 'PGRST116') {
         return null;
       }
       rethrow;

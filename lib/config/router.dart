@@ -3,11 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'dart:typed_data';
+
+import 'package:cryptography/cryptography.dart';
+
+import '../pages/auth/encryption_setup_page.dart';
+import '../pages/auth/encryption_unlock_page.dart';
+import '../pages/auth/fingerprint_verification_page.dart';
 import '../pages/auth/invite_page.dart';
 import '../pages/auth/email_auth_page.dart';
 import '../pages/auth/profile_setup_page.dart';
 import '../pages/auth/qr_scanner_page.dart';
 import '../pages/auth/sign_in_page.dart';
+import '../models/partnership.dart';
 import '../pages/history/history_detail_page.dart';
 import '../pages/history/history_page.dart';
 import '../pages/home/home_page.dart';
@@ -16,11 +24,13 @@ import '../pages/stats/stats_page.dart';
 import '../pages/expense_input/expense_input_page.dart';
 import '../pages/settings/category_edit_page.dart';
 import '../pages/settings/partnership_manage_page.dart';
+import '../pages/settings/encryption_settings_page.dart';
 import '../pages/settings/privacy_policy_page.dart';
 import '../pages/settings/profile_edit_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/shell/main_shell.dart';
 import '../providers/auth_provider.dart';
+import '../providers/encryption_provider.dart';
 import '../utils/router_redirect.dart';
 
 part 'router.g.dart';
@@ -44,6 +54,16 @@ GoRouter router(Ref ref) {
       refreshNotifier.value++;
     }
   });
+  // Refresh router when encryption unlock check completes.
+  // The encryptionUnlockRequiredProvider handles everything:
+  // local cache restore, server check, and reactive re-evaluation.
+  ref.listen<AsyncValue<bool>>(encryptionUnlockRequiredProvider, (prev, next) {
+    debugPrint('[router] encryptionUnlock: $prev → $next');
+    if (prev == null || prev.isLoading || prev.valueOrNull != next.valueOrNull) {
+      debugPrint('[router] encryptionUnlock triggered refresh');
+      refreshNotifier.value++;
+    }
+  });
   ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
@@ -53,12 +73,21 @@ GoRouter router(Ref ref) {
     redirect: (context, state) {
       final user = ref.read(currentUserProvider);
       final profile = ref.read(currentProfileProvider);
-      return routerRedirect(
+      final unlockCheck = ref.read(encryptionUnlockRequiredProvider);
+      debugPrint('[router] redirect: loc=${state.matchedLocation}, '
+          'user=${user != null}, profileLoading=${profile.isLoading}, '
+          'hasProfile=${profile.valueOrNull != null}, '
+          'unlockCheck=$unlockCheck');
+      final result = routerRedirect(
         location: state.matchedLocation,
         isLoggedIn: user != null,
         isProfileLoading: profile.isLoading,
         hasProfile: profile.valueOrNull != null,
+        needsEncryptionUnlock: unlockCheck.valueOrNull == true,
+        isEncryptionCheckLoading: unlockCheck.isLoading,
       );
+      debugPrint('[router] redirect result: $result');
+      return result;
     },
     routes: [
       // Auth flow
@@ -89,6 +118,40 @@ GoRouter router(Ref ref) {
             builder: (context, state) => const QrScannerPage(),
           ),
         ],
+      ),
+
+      // Encryption flow
+      GoRoute(
+        path: '/fingerprint-verification',
+        redirect: (context, state) =>
+            state.extra == null ? '/home' : null,
+        builder: (context, state) {
+          final extra = state.extra! as Map<String, dynamic>;
+          return FingerprintVerificationPage(
+            partnership: extra['partnership'] as Partnership,
+            myKeyPair: extra['myKeyPair'] as SimpleKeyPair,
+            myPubKey: extra['myPubKey'] as SimplePublicKey,
+            peerPubKey: extra['peerPubKey'] as SimplePublicKey,
+            isInitiator: extra['isInitiator'] as bool,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/encryption-setup',
+        redirect: (context, state) =>
+            state.extra == null ? '/home' : null,
+        builder: (context, state) {
+          final extra = state.extra! as Map<String, dynamic>;
+          return EncryptionSetupPage(
+            partnership: extra['partnership'] as Partnership,
+            rawKey: extra['rawKey'] as Uint8List,
+            nextRoute: extra['nextRoute'] as String?,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/encryption-unlock',
+        builder: (context, state) => const EncryptionUnlockPage(),
       ),
 
       // Main shell with bottom navigation
@@ -164,6 +227,11 @@ GoRouter router(Ref ref) {
                     path: 'privacy-policy',
                     builder: (context, state) =>
                         const PrivacyPolicyPage(),
+                  ),
+                  GoRoute(
+                    path: 'encryption',
+                    builder: (context, state) =>
+                        const EncryptionSettingsPage(),
                   ),
                 ],
               ),

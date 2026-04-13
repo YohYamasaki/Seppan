@@ -45,12 +45,10 @@ final activePartnershipProvider =
 // ignore: unused_element
 typedef ActivePartnershipRef = AutoDisposeFutureProviderRef<Partnership?>;
 String _$currentPartnershipHash() =>
-    r'5c1614aad809453088a512fb41ea7b0a9d256c58';
+    r'6962840089491bf5bf3110b72719c5cdc633525f';
 
 /// Current partnership: active first, falls back to pending.
-/// If neither exists, creates a new pending partnership and migrates
-/// the user's expenses from any archived partnership (lazy migration
-/// for the partner who was unlinked by the other side).
+/// If neither exists, creates a new pending partnership.
 ///
 /// Copied from [currentPartnership].
 @ProviderFor(currentPartnership)

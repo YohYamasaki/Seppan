@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../models/profile.dart';
 import '../../providers/auth_provider.dart';
@@ -44,6 +45,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
             ),
           );
       ref.invalidate(currentProfileProvider);
+      if (mounted) context.go('/invite');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
