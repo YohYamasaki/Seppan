@@ -374,10 +374,10 @@ class _FingerprintVerificationPageState
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const Gap(8),
-                  const Text(
+                  Text(
                     '相手の画面に表示されている番号と\n一致することを確認してください',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                   ),
                   const Gap(32),
                   Container(
@@ -417,13 +417,13 @@ class _FingerprintVerificationPageState
                   ),
                   const Spacer(),
                   if (_confirming)
-                    const Column(
+                    Column(
                       children: [
-                        CircularProgressIndicator(),
-                        Gap(12),
+                        const CircularProgressIndicator(),
+                        const Gap(12),
                         Text(
                           '相手の確認を待っています...',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                         ),
                       ],
                     )

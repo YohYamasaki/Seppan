@@ -273,10 +273,10 @@ class _InvitePageState extends ConsumerState<InvitePage> {
               backgroundColor: Colors.white,
             ),
             const Gap(24),
-            const Text(
+            Text(
               'QRコードにはあなたの公開鍵のみが含まれています。\n秘密情報は含まれていません。',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 12),
             ),
           ],
           const Gap(32),

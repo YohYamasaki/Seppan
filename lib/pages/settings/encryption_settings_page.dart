@@ -107,9 +107,9 @@ class _EncryptionSettingsPageState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '支出データはAES-256-GCMで暗号化されています。サーバーは暗号文のみを保持し、平文データにアクセスできません。',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 12),
             ),
             const Gap(24),
             AutofillGroup(

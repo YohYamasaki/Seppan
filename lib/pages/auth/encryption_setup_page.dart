@@ -185,9 +185,9 @@ class _EncryptionSetupPageState extends ConsumerState<EncryptionSetupPage> {
               ),
             ),
             const Gap(8),
-            const Text(
+            Text(
               '8文字以上',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 12),
             ),
             const Gap(32),
             SizedBox(

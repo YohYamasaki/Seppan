@@ -87,9 +87,9 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Gap(8),
-            const Text(
+            Text(
               'データの暗号化を解除するためにパスワードが必要です。',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
             ),
             const Gap(24),
             AutofillGroup(

@@ -191,7 +191,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               children: [
                 Text(formatJpy(item.amount), style: theme.textTheme.bodyLarge),
                 const Gap(4),
-                const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                Icon(Icons.chevron_right, size: 20, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
               ],
             ),
           );
