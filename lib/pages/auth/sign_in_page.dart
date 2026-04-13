@@ -63,10 +63,7 @@ class SignInPage extends ConsumerWidget {
               const Spacer(flex: 3),
 
               // Section label
-              Text(
-                'ログイン / 新規登録',
-                style: theme.textTheme.bodySmall,
-              ),
+              Text('ログイン / 新規登録', style: theme.textTheme.bodySmall),
               const Gap(16),
               _SignInButton(
                 label: 'Googleで続ける',
@@ -78,40 +75,23 @@ class SignInPage extends ConsumerWidget {
                     await ref.read(authRepositoryProvider).signInWithGoogle();
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('認証に失敗しました: $e')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('認証に失敗しました: $e')));
                     }
                   }
                 },
               ),
-              if (!Platform.isAndroid) ...[
-                const Gap(12),
-                _SignInButton(
-                  label: 'Appleで続ける',
-                  icon: Image.asset('assets/logos/apple.png', height: 20),
-                  backgroundColor: Colors.black,
-                  textColor: Colors.white,
-                  onPressed: () async {
-                    try {
-                      await ref.read(authRepositoryProvider).signInWithApple();
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('認証に失敗しました: $e')),
-                        );
-                      }
-                    }
-                  },
-                ),
-              ],
               const Gap(12),
               _SignInButton(
                 label: 'メールで続ける',
-                icon: Icon(Icons.mail_outline, size: 20,
-                    color: colorScheme.onPrimary),
-                backgroundColor: colorScheme.primary,
-                textColor: colorScheme.onPrimary,
+                icon: Icon(
+                  Icons.mail_outline,
+                  size: 20,
+                  color: colorScheme.onSurface,
+                ),
+                backgroundColor: colorScheme.surfaceContainerHigh,
+                textColor: colorScheme.onSurface,
                 onPressed: () => context.push('/sign-in/email'),
               ),
 

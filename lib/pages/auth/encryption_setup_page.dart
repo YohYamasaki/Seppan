@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../config/theme.dart';
 import '../../models/partnership.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/encryption_provider.dart';
@@ -47,16 +46,16 @@ class _EncryptionSetupPageState extends ConsumerState<EncryptionSetupPage> {
     final confirm = _confirmController.text;
 
     if (password.length < 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('パスワードは8文字以上で入力してください')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('パスワードは8文字以上で入力してください')));
       return;
     }
 
     if (password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('パスワードが一致しません')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('パスワードが一致しません')));
       return;
     }
 
@@ -66,7 +65,9 @@ class _EncryptionSetupPageState extends ConsumerState<EncryptionSetupPage> {
       final user = ref.read(currentUserProvider);
       if (user == null) return;
 
-      await ref.read(encryptionKeyNotifierProvider.notifier).setupEncryption(
+      await ref
+          .read(encryptionKeyNotifierProvider.notifier)
+          .setupEncryption(
             partnershipId: widget.partnership.id,
             userId: user.id,
             password: password,
@@ -82,9 +83,9 @@ class _EncryptionSetupPageState extends ConsumerState<EncryptionSetupPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('エラーが発生しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('エラーが発生しました: $e')));
       }
     }
   }
@@ -101,11 +102,23 @@ class _EncryptionSetupPageState extends ConsumerState<EncryptionSetupPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.lock_outline, size: 48, color: Colors.grey),
+            Icon(
+              Icons.lock_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const Gap(16),
             const Text(
               'データを保護するパスワードを\n設定してください',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Gap(8),
+            Text(
+              '支出データはAES-256-GCMで暗号化されます。このパスワードで暗号化鍵を保護し、別のデバイスからもデータにアクセスできるようにします。',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const Gap(24),
             Container(
@@ -121,7 +134,7 @@ class _EncryptionSetupPageState extends ConsumerState<EncryptionSetupPage> {
                   Gap(8),
                   Expanded(
                     child: Text(
-                      'このパスワードを忘れると、別のデバイスからデータを復元できなくなります。安全な場所にメモしてください。',
+                      'このパスワードを忘れると、データを復元できなくなります。サービス提供者を含め、誰もパスワードを復元することはできません。必ず安全な場所にメモしてください。',
                       style: TextStyle(fontSize: 12),
                     ),
                   ),
@@ -129,35 +142,46 @@ class _EncryptionSetupPageState extends ConsumerState<EncryptionSetupPage> {
               ),
             ),
             const Gap(24),
-            TextField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: 'パスワード',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword
-                      ? Icons.visibility_off
-                      : Icons.visibility),
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                ),
-              ),
-            ),
-            const Gap(16),
-            TextField(
-              controller: _confirmController,
-              obscureText: _obscureConfirm,
-              decoration: InputDecoration(
-                labelText: 'パスワード（確認）',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscureConfirm
-                      ? Icons.visibility_off
-                      : Icons.visibility),
-                  onPressed: () =>
-                      setState(() => _obscureConfirm = !_obscureConfirm),
-                ),
+            AutofillGroup(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    decoration: InputDecoration(
+                      labelText: 'パスワード',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Gap(16),
+                  TextField(
+                    controller: _confirmController,
+                    obscureText: _obscureConfirm,
+                    autofillHints: const [AutofillHints.newPassword],
+                    decoration: InputDecoration(
+                      labelText: 'パスワード（確認）',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirm
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const Gap(8),
@@ -170,16 +194,14 @@ class _EncryptionSetupPageState extends ConsumerState<EncryptionSetupPage> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _saving ? null : _onSave,
-                style: FilledButton.styleFrom(
-                  backgroundColor: seppanBrandColor,
-                  minimumSize: const Size.fromHeight(48),
-                ),
                 child: _saving
                     ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Text('設定を完了', style: TextStyle(fontSize: 16)),
               ),

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/encryption_provider.dart';
 import '../../providers/partnership_provider.dart';
@@ -37,12 +36,13 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
     final partnership = await ref.read(currentPartnershipProvider.future);
     if (user == null || partnership == null) return;
 
-    final success =
-        await ref.read(encryptionKeyNotifierProvider.notifier).unlockWithPassword(
-              partnershipId: partnership.id,
-              userId: user.id,
-              password: password,
-            );
+    final success = await ref
+        .read(encryptionKeyNotifierProvider.notifier)
+        .unlockWithPassword(
+          partnershipId: partnership.id,
+          userId: user.id,
+          password: password,
+        );
 
     if (!mounted) return;
 
@@ -50,9 +50,9 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
       context.go('/home');
     } else {
       setState(() => _unlocking = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('パスワードが正しくありません')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('パスワードが正しくありません')));
     }
   }
 
@@ -76,7 +76,11 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.lock, size: 48, color: Colors.grey),
+            Icon(
+              Icons.lock,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const Gap(16),
             const Text(
               '暗号化パスワードを\n入力してください',
@@ -84,21 +88,24 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
             ),
             const Gap(8),
             const Text(
-              'このデバイスからデータにアクセスするにはパスワードが必要です。',
+              'データの暗号化を解除するためにパスワードが必要です。',
               style: TextStyle(color: Colors.grey),
             ),
             const Gap(24),
-            TextField(
-              controller: _passwordController,
-              obscureText: _obscure,
-              onSubmitted: (_) => _onUnlock(),
-              decoration: InputDecoration(
-                labelText: 'パスワード',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                      _obscure ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscure = !_obscure),
+            AutofillGroup(
+              child: TextField(
+                controller: _passwordController,
+                obscureText: _obscure,
+                autofillHints: const [AutofillHints.password],
+                onSubmitted: (_) => _onUnlock(),
+                decoration: InputDecoration(
+                  labelText: 'パスワード',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscure ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                  ),
                 ),
               ),
             ),
@@ -107,16 +114,14 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _unlocking ? null : _onUnlock,
-                style: FilledButton.styleFrom(
-                  backgroundColor: seppanBrandColor,
-                  minimumSize: const Size.fromHeight(48),
-                ),
                 child: _unlocking
                     ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Text('ロック解除', style: TextStyle(fontSize: 16)),
               ),

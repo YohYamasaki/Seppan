@@ -72,6 +72,15 @@ ThemeData seppanLightTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      hintStyle: TextStyle(
+        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+      ),
+      labelStyle: TextStyle(
+        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+      ),
+      floatingLabelStyle: TextStyle(
+        color: colorScheme.primary,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,

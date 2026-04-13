@@ -111,15 +111,28 @@ class SettingsPage extends ConsumerWidget {
           children: [
             const Text(
               'ユーザーデータ、入力された支払い履歴がすべて消去されます。\n'
+              'パートナーとのリンクは自動的に解除され、リンク相手があなたの代わりに入力した履歴もすべて削除されます。\n'
               'この操作は取り消すことができません。\n\n'
               '本当に実行する場合は「削除」と入力してください。',
             ),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: '削除',
-                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
               ),
             ),
           ],

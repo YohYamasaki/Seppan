@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../config/theme.dart';
 import '../../models/partnership.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/encryption_provider.dart';
@@ -319,6 +318,33 @@ class _FingerprintVerificationPageState
     context.go('/home');
   }
 
+  Widget _buildFingerprintGrid() {
+    final groups = _fingerprint.split(' ');
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var r = 0; r < 2; r++)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var c = 0; c < 2; c++) ...[
+                if (c > 0) const SizedBox(width: 20),
+                Text(
+                  groups[r * 2 + c],
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ],
+          ),
+      ],
+    );
+  }
+
   void _cleanup() {
     _watchSub?.cancel();
     _watchSub = null;
@@ -341,7 +367,7 @@ class _FingerprintVerificationPageState
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
-                  const Icon(Icons.fingerprint, size: 64, color: Colors.grey),
+                  Icon(Icons.fingerprint, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const Gap(24),
                   const Text(
                     'セキュリティコード',
@@ -360,18 +386,13 @@ class _FingerprintVerificationPageState
                       vertical: 20,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Text(
-                      _fingerprint,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 2,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
+                    child: _buildFingerprintGrid(),
                   ),
                   const Gap(16),
                   Container(
@@ -411,10 +432,6 @@ class _FingerprintVerificationPageState
                       width: double.infinity,
                       child: FilledButton(
                         onPressed: _onConfirm,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: seppanBrandColor,
-                          minimumSize: const Size.fromHeight(48),
-                        ),
                         child: const Text(
                           '一致を確認しました',
                           style: TextStyle(fontSize: 16),

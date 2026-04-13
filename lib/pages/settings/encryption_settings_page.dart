@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 
-import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/encryption_provider.dart';
 import '../../providers/partnership_provider.dart';
@@ -113,51 +112,57 @@ class _EncryptionSettingsPageState
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
             const Gap(24),
-            TextField(
-              controller: _currentPasswordController,
-              obscureText: !_showCurrentPassword,
-              decoration: InputDecoration(
-                labelText: '現在のパスワード',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(_showCurrentPassword
-                      ? Icons.visibility_off
-                      : Icons.visibility),
-                  onPressed: () => setState(
-                      () => _showCurrentPassword = !_showCurrentPassword),
-                ),
-              ),
-            ),
-            const Gap(12),
-            TextField(
-              controller: _newPasswordController,
-              obscureText: !_showNewPassword,
-              decoration: InputDecoration(
-                labelText: '新しいパスワード',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(_showNewPassword
-                      ? Icons.visibility_off
-                      : Icons.visibility),
-                  onPressed: () =>
-                      setState(() => _showNewPassword = !_showNewPassword),
-                ),
-              ),
-            ),
-            const Gap(12),
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: !_showConfirmPassword,
-              decoration: InputDecoration(
-                labelText: '新しいパスワード（確認）',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(_showConfirmPassword
-                      ? Icons.visibility_off
-                      : Icons.visibility),
-                  onPressed: () => setState(
-                      () => _showConfirmPassword = !_showConfirmPassword),
-                ),
+            AutofillGroup(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _currentPasswordController,
+                    obscureText: !_showCurrentPassword,
+                    autofillHints: const [AutofillHints.password],
+                    decoration: InputDecoration(
+                      labelText: '現在のパスワード',
+                      suffixIcon: IconButton(
+                        icon: Icon(_showCurrentPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () => setState(
+                            () => _showCurrentPassword = !_showCurrentPassword),
+                      ),
+                    ),
+                  ),
+                  const Gap(12),
+                  TextField(
+                    controller: _newPasswordController,
+                    obscureText: !_showNewPassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    decoration: InputDecoration(
+                      labelText: '新しいパスワード',
+                      suffixIcon: IconButton(
+                        icon: Icon(_showNewPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () =>
+                            setState(() => _showNewPassword = !_showNewPassword),
+                      ),
+                    ),
+                  ),
+                  const Gap(12),
+                  TextField(
+                    controller: _confirmPasswordController,
+                    obscureText: !_showConfirmPassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    decoration: InputDecoration(
+                      labelText: '新しいパスワード（確認）',
+                      suffixIcon: IconButton(
+                        icon: Icon(_showConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () => setState(
+                            () => _showConfirmPassword = !_showConfirmPassword),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const Gap(24),
@@ -165,10 +170,6 @@ class _EncryptionSettingsPageState
               width: double.infinity,
               child: FilledButton(
                 onPressed: _changing ? null : _changePassword,
-                style: FilledButton.styleFrom(
-                  backgroundColor: seppanBrandColor,
-                  minimumSize: const Size.fromHeight(48),
-                ),
                 child: _changing
                     ? const SizedBox(
                         height: 20,

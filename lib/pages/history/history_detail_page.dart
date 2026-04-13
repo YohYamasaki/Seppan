@@ -98,11 +98,6 @@ class HistoryDetailPage extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(48),
-                    ),
                     icon: const Icon(Icons.edit),
                     label: const Text('編集'),
                     onPressed: () async {

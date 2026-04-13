@@ -247,7 +247,7 @@ class _InvitePageState extends ConsumerState<InvitePage> {
       child: Column(
         children: [
           if (_expired) ...[
-            const Icon(Icons.timer_off, size: 48, color: Colors.grey),
+            Icon(Icons.timer_off, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const Gap(16),
             const Text(
               'QRコードの有効期限が切れました',
@@ -259,9 +259,6 @@ class _InvitePageState extends ConsumerState<InvitePage> {
               onPressed: _refreshQr,
               icon: const Icon(Icons.refresh),
               label: const Text('QRコードを更新'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-              ),
             ),
           ] else ...[
             const Text(

@@ -54,7 +54,7 @@ final encryptionUnlockRequiredProvider =
 // ignore: unused_element
 typedef EncryptionUnlockRequiredRef = AutoDisposeFutureProviderRef<bool>;
 String _$encryptionKeyNotifierHash() =>
-    r'c844b8befa3b6f9675920269b7072a664876382c';
+    r'881f0a4e660188c973a318f2003f9b5deeb4262e';
 
 /// See also [EncryptionKeyNotifier].
 @ProviderFor(EncryptionKeyNotifier)

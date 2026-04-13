@@ -122,11 +122,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               const Gap(16),
               ElevatedButton(
                 onPressed: _loading ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(48),
-                ),
                 child: _loading
                     ? const SizedBox(
                         height: 20,
