@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../config/theme.dart';
+
 class MainButton extends StatelessWidget {
   const MainButton({
     super.key,
@@ -18,7 +20,7 @@ class MainButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = backgroundColor ?? Theme.of(context).colorScheme.primary;
+    final bg = backgroundColor ?? seppanBrandColor;
     final fg = foregroundColor ?? Colors.white;
 
     return SizedBox(

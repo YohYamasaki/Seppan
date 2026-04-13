@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-const _seedColor = Color(0xFFE6B251);
+const seppanBrandColor = Color(0xFFD98B00);
 
 ThemeData seppanLightTheme() {
   final colorScheme = ColorScheme.fromSeed(
-    seedColor: _seedColor,
+    seedColor: seppanBrandColor,
     brightness: Brightness.light,
   );
 
@@ -45,8 +45,8 @@ ThemeData seppanLightTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: colorScheme.tertiary,
-        foregroundColor: colorScheme.onTertiary,
+        backgroundColor: seppanBrandColor,
+        foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -55,8 +55,8 @@ ThemeData seppanLightTheme() {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: colorScheme.tertiary,
-        foregroundColor: colorScheme.onTertiary,
+        backgroundColor: seppanBrandColor,
+        foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -90,8 +90,8 @@ ThemeData seppanLightTheme() {
       thickness: 0.5,
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: colorScheme.tertiary,
-      foregroundColor: colorScheme.onTertiary,
+      backgroundColor: seppanBrandColor,
+      foregroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
