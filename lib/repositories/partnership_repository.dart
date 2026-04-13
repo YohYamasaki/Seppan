@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase.dart';
@@ -21,11 +19,9 @@ class PartnershipRepository {
   ];
 
   Future<Partnership> createPartnership(String userId) async {
-    final code = await _generateUniqueInviteCode();
     final data = await _maybeSingle(
       supabase.from(_table).insert({
         'user1_id': userId,
-        'invite_code': code,
         'status': 'pending',
       }).select(),
     );
@@ -45,22 +41,69 @@ class PartnershipRepository {
   }
 
   Future<Partnership?> joinPartnership(
-    String inviteCode,
+    String partnershipId,
     String userId,
+    String ecdhPub,
   ) async {
     final data = await _maybeSingle(
       supabase
           .from(_table)
           .update({
             'user2_id': userId,
-            'status': 'active',
+            'user2_ecdh_pub': ecdhPub,
           })
-          .eq('invite_code', inviteCode)
+          .eq('id', partnershipId)
           .eq('status', 'pending')
           .select(),
     );
     if (data == null) return null;
     return Partnership.fromJson(data);
+  }
+
+  Future<Partnership?> getPartnership(String partnershipId) async {
+    final data = await _maybeSingle(
+      supabase.from(_table).select().eq('id', partnershipId),
+    );
+    if (data == null) return null;
+    return Partnership.fromJson(data);
+  }
+
+  /// Signal that the joiner cancelled (clear ECDH pub only).
+  /// We keep user2_id intact to avoid RLS violations — the initiator
+  /// detects cancellation by checking user2_ecdh_pub == null.
+  Future<void> unjoinPartnership(String partnershipId) async {
+    await supabase.from(_table).update({
+      'user2_ecdh_pub': null,
+    }).eq('id', partnershipId);
+  }
+
+  Future<void> updateEcdhPub(
+    String partnershipId,
+    String field,
+    String pubKey,
+  ) async {
+    await supabase
+        .from(_table)
+        .update({field: pubKey})
+        .eq('id', partnershipId);
+  }
+
+  /// Store wrapped key without changing status (status stays 'pending').
+  /// The joiner calls [activatePartnership] after receiving the key.
+  Future<void> storeWrappedPartnershipKey(
+    String partnershipId,
+    String wrappedKey,
+  ) async {
+    await supabase.from(_table).update({
+      'wrapped_partnership_key': wrappedKey,
+    }).eq('id', partnershipId);
+  }
+
+  /// Set partnership status to 'active' (called by joiner after key receipt).
+  Future<void> activatePartnership(String partnershipId) async {
+    await supabase.from(_table).update({
+      'status': 'active',
+    }).eq('id', partnershipId);
   }
 
   Future<Partnership?> getPendingPartnership(String userId) async {
@@ -212,28 +255,11 @@ class PartnershipRepository {
       if (response is Map<String, dynamic>) return response;
       return null;
     } on PostgrestException catch (e) {
-      if (e.code == '406' || e.message.contains('PGRST116')) {
+      if (e.code == 'PGRST116') {
         return null;
       }
       rethrow;
     }
   }
 
-  Future<String> _generateUniqueInviteCode() async {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final random = Random.secure();
-
-    for (var attempt = 0; attempt < 10; attempt++) {
-      final code = List.generate(
-        6,
-        (_) => chars[random.nextInt(chars.length)],
-      ).join();
-
-      final existing = await _maybeSingle(
-        supabase.from(_table).select('id').eq('invite_code', code),
-      );
-      if (existing == null) return code;
-    }
-    throw StateError('Failed to generate unique invite code');
-  }
 }
