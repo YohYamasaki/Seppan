@@ -17,7 +17,13 @@ class SettingsPage extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.face,
             title: '名前・アイコンの変更',
-            onTap: () => context.push('/settings/profile-edit'),
+            onTap: () async {
+              final updated =
+                  await context.push<bool>('/settings/profile-edit');
+              if (updated == true) {
+                ref.invalidate(currentProfileProvider);
+              }
+            },
           ),
           _SettingsTile(
             icon: Icons.list,
@@ -35,6 +41,11 @@ class SettingsPage extends ConsumerWidget {
             onTap: () => _confirmLogout(context, ref),
           ),
           const SizedBox(height: 48),
+          _SettingsTile(
+            icon: Icons.shield_outlined,
+            title: 'プライバシーポリシー',
+            onTap: () => context.push('/settings/privacy-policy'),
+          ),
           _SettingsTile(
             icon: Icons.info_outline,
             title: '概要・ライセンス情報',

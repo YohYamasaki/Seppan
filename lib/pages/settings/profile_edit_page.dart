@@ -48,8 +48,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             displayName: _nameController.text.trim(),
             iconId: _selectedIconId,
           );
-      ref.invalidate(currentProfileProvider);
-      if (mounted) context.pop();
+      if (mounted) context.pop(true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
