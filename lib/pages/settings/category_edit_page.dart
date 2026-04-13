@@ -96,12 +96,24 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
           sortOrder: _categories.length,
         );
     ref.invalidate(categoriesProvider);
-    _loadCategories();
+    await _loadCategories();
   }
 
   Future<void> _saveReorder() async {
-    await ref.read(partnershipRepositoryProvider).reorderCategories(_categories);
-    ref.invalidate(categoriesProvider);
+    try {
+      await ref
+          .read(partnershipRepositoryProvider)
+          .reorderCategories(_categories);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('並べ替えの保存に失敗しました: $e')),
+        );
+        // Reload from DB to sync UI with actual state
+        ref.invalidate(categoriesProvider);
+        await _loadCategories();
+      }
+    }
   }
 
   Future<void> _deleteCategory(Category category) async {
@@ -148,7 +160,6 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                       ),
                       onDismissed: (_) => _deleteCategory(cat),
                       child: ListTile(
-                        key: ValueKey(cat.id),
                         leading: const Icon(Icons.drag_handle),
                         title: Text(cat.name),
                       ),

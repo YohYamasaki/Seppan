@@ -140,7 +140,7 @@ class PartnershipRepository {
         .from(_categoriesTable)
         .select()
         .eq('partnership_id', partnershipId)
-        .order('sort_order');
+        .order('sort_order', ascending: true);
     return data.map((e) => Category.fromJson(e)).toList();
   }
 
@@ -157,13 +157,13 @@ class PartnershipRepository {
   }
 
   Future<void> reorderCategories(List<Category> categories) async {
-    final updates = categories.asMap().entries.map((e) => {
-          'id': e.value.id,
-          'partnership_id': e.value.partnershipId,
-          'name': e.value.name,
-          'sort_order': e.key,
-        });
-    await supabase.from(_categoriesTable).upsert(updates.toList());
+    await Future.wait([
+      for (var i = 0; i < categories.length; i++)
+        supabase
+            .from(_categoriesTable)
+            .update({'sort_order': i})
+            .eq('id', categories[i].id),
+    ]);
   }
 
   Future<void> upsertCategory(Category category) async {
