@@ -118,6 +118,29 @@ class PartnershipRepository {
     return Partnership.fromJson(data);
   }
 
+  /// Detaches the partner from the partnership before account deletion.
+  ///
+  /// Clears user2_id and archives the partnership. This way the RPC
+  /// delete_user_data (which looks up partnerships by user_id) will
+  /// only see the deleting user — the partner's expenses are safe.
+  ///
+  /// - If the deleting user is user1: clear user2_id so the RPC won't
+  ///   cascade-delete the partner's data via user2_id lookup.
+  /// - If the deleting user is user2: clear user2_id (removes self).
+  ///   The RPC won't find this partnership via user2_id anymore.
+  ///
+  /// We never change user1_id — that would violate RLS (the current
+  /// user would be removed from the row mid-update).
+  Future<void> detachUserFromPartnership(
+    String partnershipId,
+    String userId,
+  ) async {
+    await supabase.from(_table).update({
+      'user2_id': null,
+      'status': 'archived',
+    }).eq('id', partnershipId);
+  }
+
   Stream<Partnership> watchPartnership(String partnershipId) {
     return supabase
         .from(_table)

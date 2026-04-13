@@ -137,6 +137,138 @@ void main() {
     });
   });
 
+  group('Partner data preservation on account deletion', () {
+    final partnershipRepoFile =
+        File('lib/repositories/partnership_repository.dart');
+    final expenseRepoFile = File('lib/repositories/expense_repository.dart');
+    final partnershipProviderFile =
+        File('lib/providers/partnership_provider.dart');
+
+    late String settingsContent;
+    late String partnershipRepoContent;
+    late String expenseRepoContent;
+    late String providerContent;
+
+    setUpAll(() {
+      settingsContent = settingsFile.readAsStringSync();
+      partnershipRepoContent = partnershipRepoFile.readAsStringSync();
+      expenseRepoContent = expenseRepoFile.readAsStringSync();
+      providerContent = partnershipProviderFile.readAsStringSync();
+    });
+
+    test('detachUserFromPartnership method exists', () {
+      expect(
+        partnershipRepoContent.contains('detachUserFromPartnership'),
+        isTrue,
+        reason: 'PartnershipRepository must have detachUserFromPartnership '
+            'to remove the deleting user from the partnership.',
+      );
+    });
+
+    test('detachUserFromPartnership clears user2_id', () {
+      final methodStart =
+          partnershipRepoContent.indexOf('detachUserFromPartnership');
+      final area = partnershipRepoContent.substring(
+        methodStart,
+        (methodStart + 800).clamp(0, partnershipRepoContent.length),
+      );
+      expect(area.contains('user2_id'), isTrue,
+          reason: 'Must clear user2_id to protect partner data from RPC.');
+    });
+
+    test('detachUserFromPartnership does not change user1_id', () {
+      // Changing user1_id would violate RLS — the current user is
+      // removed from the row mid-update, causing a policy error.
+      final methodStart = partnershipRepoContent.indexOf(
+        'Future<void> detachUserFromPartnership',
+      );
+      final nextMethod = partnershipRepoContent.indexOf(
+        'Stream<Partnership>',
+        methodStart,
+      );
+      final methodBody = partnershipRepoContent.substring(
+        methodStart,
+        nextMethod,
+      );
+      expect(
+        methodBody.contains("'user1_id'"),
+        isFalse,
+        reason: 'Must NOT update user1_id — that violates RLS.',
+      );
+    });
+
+    test('detachUserFromPartnership archives the partnership', () {
+      final methodStart =
+          partnershipRepoContent.indexOf('detachUserFromPartnership');
+      final area = partnershipRepoContent.substring(
+        methodStart,
+        (methodStart + 800).clamp(0, partnershipRepoContent.length),
+      );
+      expect(area.contains("'archived'"), isTrue,
+          reason: 'Must set status to archived so lazy migration works.');
+    });
+
+    test('deleteUserExpenses method exists', () {
+      expect(
+        expenseRepoContent.contains('deleteUserExpenses'),
+        isTrue,
+        reason: 'ExpenseRepository must have deleteUserExpenses to '
+            'delete only the user\'s own expenses from a partnership.',
+      );
+    });
+
+    test('deleteUserExpenses filters by paid_by', () {
+      final methodStart =
+          expenseRepoContent.indexOf('deleteUserExpenses');
+      final area = expenseRepoContent.substring(
+        methodStart,
+        (methodStart + 300).clamp(0, expenseRepoContent.length),
+      );
+      expect(area.contains('paid_by'), isTrue,
+          reason: 'Must filter by paid_by to only delete user\'s expenses.');
+    });
+
+    test('settings page does not do client-side partnership cleanup', () {
+      // All cleanup is handled by the server-side RPC (delete_user_data).
+      // Client-side calls would be fragile and redundant.
+      final deleteSection = RegExp(
+        r'_confirmDelete[\s\S]*?^\s*\}',
+        multiLine: true,
+      ).firstMatch(settingsContent)?.group(0) ?? '';
+
+      expect(
+        deleteSection.contains('detachUserFromPartnership'),
+        isFalse,
+        reason: 'Settings page must NOT call detachUserFromPartnership. '
+            'The RPC handles partnership cleanup server-side.',
+      );
+    });
+
+    test('settings page does not do client-side expense cleanup', () {
+      final deleteSection = RegExp(
+        r'_confirmDelete[\s\S]*?^\s*\}',
+        multiLine: true,
+      ).firstMatch(settingsContent)?.group(0) ?? '';
+
+      expect(
+        deleteSection.contains('deleteUserExpenses'),
+        isFalse,
+        reason: 'Settings page must NOT call deleteUserExpenses. '
+            'The RPC handles expense cleanup server-side.',
+      );
+    });
+
+    test('lazy migration handles partner after account deletion', () {
+      // The partner will have no active/pending partnership after deletion.
+      // currentPartnershipProvider must check archived and migrate.
+      expect(providerContent.contains('getLastArchivedPartnership'), isTrue,
+          reason: 'Provider must check archived partnerships for lazy '
+              'migration when partner\'s account is deleted.');
+      expect(providerContent.contains('migrateUserExpenses'), isTrue,
+          reason: 'Provider must migrate expenses from archived partnership.');
+    });
+  });
+
   group('Google sign-in account selection', () {
     late String authRepoContent;
 

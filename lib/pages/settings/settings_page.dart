@@ -128,6 +128,12 @@ class SettingsPage extends ConsumerWidget {
 
     if (result == true && context.mounted) {
       try {
+        // The server-side RPC (delete_user_data) handles everything:
+        //   - deletes only this user's expenses (paid_by)
+        //   - detaches user from partnerships (archives them)
+        //   - deletes solo partnerships + categories
+        //   - deletes profile
+        // No client-side pre-processing needed.
         await ref.read(authRepositoryProvider).deleteAccount();
         if (context.mounted) context.go('/sign-in');
       } catch (e) {

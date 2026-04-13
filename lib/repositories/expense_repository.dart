@@ -46,6 +46,20 @@ class ExpenseRepository {
     await supabase.from(_table).delete().eq('id', expenseId);
   }
 
+  /// Deletes all expenses paid by [userId] in the given partnership.
+  /// Used before account deletion to clean up the user's own expenses
+  /// while preserving the partner's expenses.
+  Future<void> deleteUserExpenses(
+    String partnershipId,
+    String userId,
+  ) async {
+    await supabase
+        .from(_table)
+        .delete()
+        .eq('partnership_id', partnershipId)
+        .eq('paid_by', userId);
+  }
+
   /// Moves all expenses from one partnership to another.
   /// Used when a user who already has expenses on a pending partnership
   /// joins another user's partnership.
