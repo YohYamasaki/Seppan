@@ -9,9 +9,11 @@ abstract class Partnership with _$Partnership {
     required String id,
     required String user1Id,
     String? user2Id,
-    required String inviteCode,
     @Default('pending') String status,
     required DateTime createdAt,
+    String? user1EcdhPub,
+    String? user2EcdhPub,
+    String? wrappedPartnershipKey,
   }) = _Partnership;
 
   factory Partnership.fromJson(Map<String, dynamic> json) =>

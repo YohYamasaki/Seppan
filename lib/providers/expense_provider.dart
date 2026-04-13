@@ -3,13 +3,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/expense.dart';
 import '../repositories/expense_repository.dart';
+import 'encryption_provider.dart';
 import 'partnership_provider.dart';
 
 part 'expense_provider.g.dart';
 
 @riverpod
 ExpenseRepository expenseRepository(Ref ref) {
-  return ExpenseRepository();
+  final key = ref.watch(encryptionKeyNotifierProvider);
+  return ExpenseRepository(encryptionKey: key);
 }
 
 @riverpod

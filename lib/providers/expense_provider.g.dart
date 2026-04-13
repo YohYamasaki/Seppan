@@ -6,7 +6,7 @@ part of 'expense_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$expenseRepositoryHash() => r'e33dbce465ddd2592a69b3b85e5c8cacaa8da411';
+String _$expenseRepositoryHash() => r'0e282006e815b7f37173353a8fc0ce9698cbb281';
 
 /// See also [expenseRepository].
 @ProviderFor(expenseRepository)
