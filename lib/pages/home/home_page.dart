@@ -18,6 +18,7 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(currentProfileProvider);
     final partnerProfile = ref.watch(partnerProfileProvider);
     final partnership = ref.watch(activePartnershipProvider);
@@ -58,8 +59,7 @@ class HomePage extends ConsumerWidget {
               const Gap(8),
 
               // Loading placeholder while partnership state resolves
-              if (isPartnershipLoading)
-                const _LoadingCard(),
+              if (isPartnershipLoading) const _LoadingCard(),
 
               // Partnership link prompt
               if (!isPartnershipLoading && !hasActivePartnership)
@@ -68,18 +68,29 @@ class HomePage extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.people_outline,
-                            size: 48, color: Colors.grey),
+                        Icon(
+                          Icons.people_outline,
+                          size: 48,
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                         const Gap(12),
                         const Text(
                           'リンクされていません',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const Gap(4),
-                        const Text(
+                        Text(
                           'パートナーとリンクしてください',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
                         ),
                         const Gap(12),
                         TextButton(
@@ -153,15 +164,24 @@ class HomePage extends ConsumerWidget {
                 header: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('履歴',
-                        style: Theme.of(context).textTheme.displayMedium),
+                    Text(
+                      '履歴',
+                      style: Theme.of(context).textTheme.displayMedium,
+                    ),
                     Row(
                       children: [
-                        Text('もっと見る',
-                            style: Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          'もっと見る',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                         const Gap(4),
-                        const Icon(Icons.chevron_right,
-                            size: 20, color: Colors.grey),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                       ],
                     ),
                   ],
