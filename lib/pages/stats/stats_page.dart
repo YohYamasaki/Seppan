@@ -77,6 +77,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(expenseDataVersionProvider, (_, __) => _loadData());
+
     final theme = Theme.of(context);
     final profile = ref.watch(currentProfileProvider).valueOrNull;
     final userName = profile?.displayName ?? '';

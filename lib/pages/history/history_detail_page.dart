@@ -150,6 +150,7 @@ class HistoryDetailPage extends ConsumerWidget {
                         ref.invalidate(recentExpensesProvider);
                         ref.invalidate(balanceSummaryProvider);
                         ref.invalidate(categoryBreakdownProvider);
+                        ref.read(expenseDataVersionProvider.notifier).state++;
                         if (context.mounted) context.pop();
                       }
                     },

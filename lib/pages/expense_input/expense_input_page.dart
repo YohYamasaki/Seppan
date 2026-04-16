@@ -126,6 +126,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
       ref.invalidate(recentExpensesProvider);
       ref.invalidate(balanceSummaryProvider);
       ref.invalidate(categoryBreakdownProvider);
+      ref.read(expenseDataVersionProvider.notifier).state++;
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {

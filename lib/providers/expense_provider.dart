@@ -8,6 +8,9 @@ import 'partnership_provider.dart';
 
 part 'expense_provider.g.dart';
 
+/// Incremented on tab switch to trigger data refresh in stateful pages.
+final expenseDataVersionProvider = StateProvider<int>((ref) => 0);
+
 @riverpod
 ExpenseRepository expenseRepository(Ref ref) {
   final key = ref.watch(encryptionKeyNotifierProvider);

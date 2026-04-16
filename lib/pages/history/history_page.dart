@@ -75,6 +75,8 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(expenseDataVersionProvider, (_, __) => _refresh());
+
     final user = ref.watch(currentUserProvider);
     final profile = ref.watch(currentProfileProvider).valueOrNull;
     final partnerProfile = ref.watch(partnerProfileProvider).valueOrNull;
