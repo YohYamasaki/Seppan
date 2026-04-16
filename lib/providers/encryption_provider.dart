@@ -186,12 +186,15 @@ class EncryptionKeyNotifier extends _$EncryptionKeyNotifier {
 
   /// キャッシュ済みの導出鍵で現在の AES 鍵を再ラップしてサーバーに保存。
   /// ECDH 鍵交換後にパスワード再入力なしで鍵をサーバーに保存するために使用。
-  Future<void> rewrapForPartnership({
+  /// 導出鍵がメモリにない場合（アプリ再起動等）は false を返す。
+  Future<bool> rewrapForPartnership({
     required String partnershipId,
     required String userId,
   }) async {
     final key = state;
-    if (key == null || _cachedDerivedKey == null || _cachedSalt == null) return;
+    if (key == null || _cachedDerivedKey == null || _cachedSalt == null) {
+      return false;
+    }
 
     final result = await EncryptionService.wrapKeyWithDerivedKey(
       key,
@@ -210,9 +213,9 @@ class EncryptionKeyNotifier extends _$EncryptionKeyNotifier {
 
     await _cacheKey(partnershipId, key);
 
-    // 導出鍵をメモリから消去（不要になったため）
     _cachedDerivedKey = null;
     _cachedSalt = null;
+    return true;
   }
 
   /// Ensure the current in-memory key is cached under [partnershipId].

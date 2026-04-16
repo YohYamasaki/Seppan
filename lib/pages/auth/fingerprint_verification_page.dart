@@ -264,9 +264,9 @@ class _FingerprintVerificationPageState
 
       if (!mounted) return;
 
-      // キャッシュ済みの導出鍵で再ラップしてサーバーに保存
-      // （パスワード再入力不要）
-      await ref
+      // キャッシュ済みの導出鍵で再ラップしてサーバーに保存。
+      // 導出鍵がメモリにない場合（アプリ再起動等）はパスワード入力へ。
+      final rewrapped = await ref
           .read(encryptionKeyNotifierProvider.notifier)
           .rewrapForPartnership(
             partnershipId: partnership.id,
@@ -277,7 +277,15 @@ class _FingerprintVerificationPageState
 
       ref.invalidate(activePartnershipProvider);
       ref.invalidate(currentPartnershipProvider);
-      context.go('/home');
+
+      if (rewrapped) {
+        context.go('/home');
+      } else {
+        context.go('/encryption-setup', extra: {
+          'partnership': partnership,
+          'rawKey': rawKey,
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

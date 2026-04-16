@@ -9,7 +9,7 @@ class AuthRepository {
     return supabase.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: 'io.supabase.seppan://login-callback/',
-      authScreenLaunchMode: LaunchMode.externalApplication,
+      authScreenLaunchMode: LaunchMode.inAppBrowserView,
       queryParams: {'prompt': 'select_account'},
     );
   }

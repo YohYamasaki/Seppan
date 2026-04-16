@@ -93,6 +93,7 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
             ),
             const Gap(24),
             AutofillGroup(
+              onDisposeAction: AutofillContextAction.cancel,
               child: TextField(
                 controller: _passwordController,
                 obscureText: _obscure,
