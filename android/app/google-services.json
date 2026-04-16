@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "342843510891",
+    "project_id": "seppan-ce939",
+    "storage_bucket": "seppan-ce939.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:342843510891:android:d1dfffa11a3902bcd3212e",
+        "android_client_info": {
+          "package_name": "com.yayo1.seppan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCb0yMlpHHkVUtTT65LVr8mYlb1kKcipKs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
