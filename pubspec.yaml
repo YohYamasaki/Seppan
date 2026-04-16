@@ -44,6 +44,9 @@ dependencies:
   firebase_core: ^3.13.0
   firebase_analytics: ^11.4.4
 
+  # Google Sign-In
+  google_sign_in: ^6.2.2
+
   # Charts
   fl_chart: ^0.70.2
 

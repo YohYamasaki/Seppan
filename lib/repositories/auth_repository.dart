@@ -1,16 +1,27 @@
 import 'dart:io';
 
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase.dart';
 
+const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
 class AuthRepository {
-  Future<bool> signInWithGoogle() async {
-    return supabase.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: 'io.supabase.seppan://login-callback/',
-      authScreenLaunchMode: LaunchMode.inAppBrowserView,
-      queryParams: {'prompt': 'select_account'},
+  Future<void> signInWithGoogle() async {
+    final googleSignIn = GoogleSignIn(serverClientId: _googleWebClientId);
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) return; // ユーザーがキャンセル
+
+    final googleAuth = await googleUser.authentication;
+    final idToken = googleAuth.idToken;
+    final accessToken = googleAuth.accessToken;
+    if (idToken == null) throw StateError('No ID token received');
+
+    await supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      accessToken: accessToken,
     );
   }
 
