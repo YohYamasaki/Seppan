@@ -1,4 +1,4 @@
-package com.example.seppan
+package com.yayo1.seppan
 
 import io.flutter.embedding.android.FlutterActivity
 

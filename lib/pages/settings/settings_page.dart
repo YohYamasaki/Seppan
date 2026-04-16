@@ -53,6 +53,11 @@ class SettingsPage extends ConsumerWidget {
             onTap: () => context.push('/settings/privacy-policy'),
           ),
           _SettingsTile(
+            icon: Icons.description_outlined,
+            title: '利用規約',
+            onTap: () => context.push('/settings/terms'),
+          ),
+          _SettingsTile(
             icon: Icons.info_outline,
             title: '概要・ライセンス情報',
             onTap: () {

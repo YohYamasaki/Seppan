@@ -63,7 +63,8 @@ class PrivacyPolicyPage extends StatelessWidget {
               '本ポリシーは予告なく変更される場合があります。'
               '重要な変更がある場合は、アプリ内でお知らせします。'),
           _section(theme, '11. お問い合わせ',
-              '本ポリシーに関するご質問は、アプリのサポートまでお問い合わせください。'),
+              '本ポリシーに関するご質問は、下記メールアドレスまでお問い合わせください。\n\n'
+              'seppan-support@yayo1.com'),
           const SizedBox(height: 32),
         ],
       ),

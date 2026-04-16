@@ -28,6 +28,7 @@ import '../pages/settings/encryption_settings_page.dart';
 import '../pages/settings/privacy_policy_page.dart';
 import '../pages/settings/profile_edit_page.dart';
 import '../pages/settings/settings_page.dart';
+import '../pages/settings/terms_page.dart';
 import '../pages/shell/main_shell.dart';
 import '../providers/auth_provider.dart';
 import '../providers/encryption_provider.dart';
@@ -227,6 +228,11 @@ GoRouter router(Ref ref) {
                     path: 'privacy-policy',
                     builder: (context, state) =>
                         const PrivacyPolicyPage(),
+                  ),
+                  GoRoute(
+                    path: 'terms',
+                    builder: (context, state) =>
+                        const TermsPage(),
                   ),
                   GoRoute(
                     path: 'encryption',
