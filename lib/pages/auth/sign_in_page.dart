@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -7,13 +5,83 @@ import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_provider.dart';
 
-class SignInPage extends ConsumerWidget {
+class SignInPage extends ConsumerStatefulWidget {
   const SignInPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SignInPage> createState() => _SignInPageState();
+}
+
+class _SignInPageState extends ConsumerState<SignInPage> {
+  bool _signingIn = false;
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _signingIn = true);
+    try {
+      final success = await ref.read(authRepositoryProvider).signInWithGoogle();
+      if (!success && mounted) {
+        // ユーザーがキャンセルした場合はスピナーを解除
+        setState(() => _signingIn = false);
+      }
+      // 成功時は意図的にリセットしない。
+      // ルーター遷移までスピナーを表示し続ける。
+    } catch (e) {
+      if (mounted) {
+        setState(() => _signingIn = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('認証に失敗しました: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+
+    // Signing in — show centered icon + spinner (like loading page)
+    if (_signingIn) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.2),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset('assets/icon.png'),
+                ),
+              ),
+              const Gap(24),
+              Text(
+                'Seppan',
+                style: theme.textTheme.displayLarge?.copyWith(
+                  fontSize: 32,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const Gap(32),
+              const CircularProgressIndicator(),
+              const Gap(12),
+              const Text('ログイン中...'),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -70,17 +138,7 @@ class SignInPage extends ConsumerWidget {
                 icon: Image.asset('assets/logos/google.png', height: 20),
                 backgroundColor: colorScheme.surfaceContainerHigh,
                 textColor: colorScheme.onSurface,
-                onPressed: () async {
-                  try {
-                    await ref.read(authRepositoryProvider).signInWithGoogle();
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('認証に失敗しました: $e')));
-                    }
-                  }
-                },
+                onPressed: _signInWithGoogle,
               ),
               const Gap(12),
               _SignInButton(

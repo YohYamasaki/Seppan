@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 
+import '../pages/loading_page.dart';
 import '../pages/auth/encryption_setup_page.dart';
 import '../pages/auth/encryption_unlock_page.dart';
 import '../pages/auth/fingerprint_verification_page.dart';
@@ -70,7 +71,7 @@ GoRouter router(Ref ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/home',
+    initialLocation: '/loading',
     refreshListenable: refreshNotifier,
     observers: [
       FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
@@ -95,6 +96,12 @@ GoRouter router(Ref ref) {
       return result;
     },
     routes: [
+      // Loading / splash
+      GoRoute(
+        path: '/loading',
+        builder: (context, state) => const LoadingPage(),
+      ),
+
       // Auth flow
       GoRoute(
         path: '/sign-in',

@@ -8,11 +8,12 @@ import '../config/supabase.dart';
 const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
 
 class AuthRepository {
-  Future<void> signInWithGoogle() async {
+  /// Returns `true` if sign-in succeeded, `false` if user cancelled.
+  Future<bool> signInWithGoogle() async {
     final googleSignIn = GoogleSignIn(serverClientId: _googleWebClientId);
     await googleSignIn.signOut(); // 前回の選択をクリアしてアカウント選択を毎回表示
     final googleUser = await googleSignIn.signIn();
-    if (googleUser == null) return; // ユーザーがキャンセル
+    if (googleUser == null) return false; // ユーザーがキャンセル
 
     final googleAuth = await googleUser.authentication;
     final idToken = googleAuth.idToken;
@@ -24,6 +25,7 @@ class AuthRepository {
       idToken: idToken,
       accessToken: accessToken,
     );
+    return true;
   }
 
   Future<bool> signInWithApple() async {

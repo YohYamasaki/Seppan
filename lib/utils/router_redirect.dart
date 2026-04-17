@@ -43,7 +43,8 @@ String? routerRedirect({
     return '/encryption-unlock';
   }
 
-  // Fully set up — redirect away from auth routes (except /invite)
+  // Fully set up — redirect away from loading/auth routes (except /invite)
+  if (location == '/loading') return '/home';
   if (isAuthRoute && !location.startsWith('/invite')) return '/home';
 
   return null;
