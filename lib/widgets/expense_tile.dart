@@ -11,17 +11,30 @@ class ExpenseTile extends StatelessWidget {
     required this.payerName,
     required this.payerIconId,
     this.onTap,
+    this.onLongPress,
+    this.selected = false,
+    this.selectionMode = false,
   });
 
   final Expense expense;
   final String payerName;
   final int payerIconId;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool selected;
+  final bool selectionMode;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListTile(
-      leading: AvatarIcon(iconId: payerIconId, radius: 20),
+      leading: selectionMode
+          ? Icon(
+              selected ? Icons.check_circle : Icons.circle_outlined,
+              color: selected ? colorScheme.primary : colorScheme.outline,
+            )
+          : AvatarIcon(iconId: payerIconId, radius: 20),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -37,8 +50,11 @@ class ExpenseTile extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: const Icon(Icons.chevron_right, size: 20),
+      trailing: selectionMode ? null : const Icon(Icons.chevron_right, size: 20),
+      selected: selected,
+      selectedTileColor: colorScheme.primaryContainer.withValues(alpha: 0.3),
       onTap: onTap,
+      onLongPress: onLongPress,
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/expense.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/balance_provider.dart';
 import '../../providers/expense_provider.dart';
 import '../../providers/partnership_provider.dart';
 import '../../widgets/expense_tile.dart';
@@ -21,6 +22,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   bool _loading = false;
   bool _hasMore = true;
   int _page = 0;
+  final Set<String> _selectedIds = {};
+
+  bool get _isSelecting => _selectedIds.isNotEmpty;
 
   @override
   void initState() {
@@ -69,8 +73,63 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       _expenses.clear();
       _page = 0;
       _hasMore = true;
+      _selectedIds.clear();
     });
     await _loadExpenses();
+  }
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll() {
+    setState(() {
+      if (_selectedIds.length == _expenses.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds.addAll(_expenses.map((e) => e.id));
+      }
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    final count = _selectedIds.length;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('まとめて削除'),
+        content: Text('$count件の履歴を削除しますか？\nこの操作は取り消せません。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('削除'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final repo = ref.read(expenseRepositoryProvider);
+    for (final id in _selectedIds) {
+      await repo.deleteExpense(id);
+    }
+
+    ref.invalidate(recentExpensesProvider);
+    ref.invalidate(balanceSummaryProvider);
+    ref.invalidate(categoryBreakdownProvider);
+    ref.read(expenseDataVersionProvider.notifier).state++;
+    // _refresh is triggered by expenseDataVersionProvider listener
   }
 
   @override
@@ -84,7 +143,45 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     final partnerIconId = partnerProfile?.iconId ?? 1;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('履歴')),
+      appBar: _isSelecting
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() => _selectedIds.clear()),
+              ),
+              title: Text('${_selectedIds.length}件選択中'),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _selectedIds.length == _expenses.length
+                        ? Icons.deselect
+                        : Icons.select_all,
+                  ),
+                  tooltip: _selectedIds.length == _expenses.length
+                      ? '全解除'
+                      : '全選択',
+                  onPressed: _selectAll,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  tooltip: '削除',
+                  onPressed: _deleteSelected,
+                ),
+              ],
+            )
+          : AppBar(
+              title: const Text('履歴'),
+              actions: [
+                if (_expenses.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.checklist),
+                    tooltip: '選択',
+                    onPressed: () => setState(() {
+                      _selectedIds.add(_expenses.first.id);
+                    }),
+                  ),
+              ],
+            ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: _expenses.isEmpty && !_loading
@@ -93,7 +190,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: _expenses.length + (_hasMore ? 1 : 0),
-                separatorBuilder: (_, _) => const Divider(height: 1),
+                separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   if (index >= _expenses.length) {
                     return const Center(
@@ -111,7 +208,12 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                         ? (profile?.displayName ?? '')
                         : partnerName,
                     payerIconId: isMe ? (profile?.iconId ?? 1) : partnerIconId,
-                    onTap: () => context.push('/history/${expense.id}'),
+                    selected: _selectedIds.contains(expense.id),
+                    selectionMode: _isSelecting,
+                    onTap: _isSelecting
+                        ? () => _toggleSelection(expense.id)
+                        : () => context.push('/history/${expense.id}'),
+                    onLongPress: () => _toggleSelection(expense.id),
                   );
                 },
               ),
