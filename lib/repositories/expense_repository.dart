@@ -57,6 +57,17 @@ class ExpenseRepository {
     return Future.wait(data.map((e) => _decryptRow(e, partnershipId)));
   }
 
+  Future<List<Expense>> getAllExpenses(String partnershipId) async {
+    if (encryptionKey == null) return [];
+    final data = await supabase
+        .from(_table)
+        .select()
+        .eq('partnership_id', partnershipId)
+        .order('date', ascending: true)
+        .order('created_at', ascending: true);
+    return Future.wait(data.map((e) => _decryptRow(e, partnershipId)));
+  }
+
   Future<Expense?> getExpense(String expenseId) async {
     if (encryptionKey == null) return null;
     final data = await supabase

@@ -1,10 +1,17 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/expense.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/encryption_provider.dart';
+import '../../providers/expense_provider.dart';
+import '../../providers/partnership_provider.dart';
+import '../../services/csv_service.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -40,6 +47,16 @@ class SettingsPage extends ConsumerWidget {
             icon: Icons.lock_outline,
             title: 'パスワードの変更',
             onTap: () => context.push('/settings/encryption'),
+          ),
+          _SettingsTile(
+            icon: Icons.file_download_outlined,
+            title: '履歴をCSVエクスポート',
+            onTap: () => _exportCsv(context, ref),
+          ),
+          _SettingsTile(
+            icon: Icons.file_upload_outlined,
+            title: 'CSVから履歴をインポート',
+            onTap: () => _importCsv(context, ref),
           ),
           _SettingsTile(
             icon: Icons.logout,
@@ -79,6 +96,128 @@ class SettingsPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
+    final partnership = await ref.read(currentPartnershipProvider.future);
+    if (partnership == null) return;
+
+    final repo = ref.read(expenseRepositoryProvider);
+    final user = ref.read(currentUserProvider);
+    final partnerProfile = await ref.read(partnerProfileProvider.future);
+    final myProfile = await ref.read(profileRepositoryProvider).getProfile(user!.id);
+
+    final userNames = <String, String>{};
+    if (myProfile != null) userNames[myProfile.id] = myProfile.displayName;
+    if (partnerProfile != null) {
+      userNames[partnerProfile.id] = partnerProfile.displayName;
+    }
+
+    try {
+      final expenses = await repo.getAllExpenses(partnership.id);
+      final saved = await CsvService.exportExpenses(
+        expenses: expenses,
+        userNames: userNames,
+      );
+      if (saved && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('CSVを保存しました')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('エクスポートに失敗しました: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importCsv(BuildContext context, WidgetRef ref) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+    );
+    if (result == null || result.files.single.path == null) return;
+
+    final partnership = await ref.read(currentPartnershipProvider.future);
+    if (partnership == null) return;
+
+    final user = ref.read(currentUserProvider);
+    final partnerProfile = await ref.read(partnerProfileProvider.future);
+    final myProfile = await ref.read(profileRepositoryProvider).getProfile(user!.id);
+
+    final nameToUserId = <String, String>{};
+    if (myProfile != null) nameToUserId[myProfile.displayName] = myProfile.id;
+    if (partnerProfile != null) {
+      nameToUserId[partnerProfile.displayName] = partnerProfile.id;
+    }
+
+    try {
+      final csvContent = await File(result.files.single.path!).readAsString();
+      final parsed = CsvService.parseExpenses(
+        csvContent: csvContent,
+        nameToUserId: nameToUserId,
+      );
+
+      if (parsed.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('インポートするデータがありません')),
+          );
+        }
+        return;
+      }
+
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('インポート確認'),
+          content: Text('${parsed.length}件のデータをインポートしますか？\n既存の履歴はそのまま保持されます。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('インポート'),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+
+      final repo = ref.read(expenseRepositoryProvider);
+      for (final data in parsed) {
+        await repo.addExpense(Expense(
+          id: '',
+          partnershipId: partnership.id,
+          paidBy: data['paidBy'] as String,
+          amount: data['amount'] as int,
+          currency: data['currency'] as String,
+          ratio: data['ratio'] as double,
+          date: data['date'] as DateTime,
+          category: data['category'] as String,
+          memo: data['memo'] as String,
+          createdAt: DateTime.now(),
+        ));
+      }
+
+      ref.read(expenseDataVersionProvider.notifier).state++;
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${parsed.length}件をインポートしました')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('インポートに失敗しました: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {

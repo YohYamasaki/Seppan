@@ -14,6 +14,9 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
+# share_plus (R8 strips plugin classes in release builds)
+-keep class dev.fluttercommunity.plus.share.** { *; }
+
 # Keep Gson/JSON serialization if used transitively
 -keepattributes Signature
 -keepattributes *Annotation*
