@@ -49,12 +49,14 @@ dependencies:
 
   # CSV export/import
   csv: ^6.0.0
-  share_plus: ^11.0.0
   file_picker: ^9.0.0
   path_provider: ^2.1.5
 
   # Charts
   fl_chart: ^0.70.2
+
+  # App info
+  package_info_plus: ^8.0.0
 
 dev_dependencies:
   flutter_test:

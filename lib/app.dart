@@ -23,7 +23,6 @@ class SeppanApp extends ConsumerWidget {
       ],
       supportedLocales: const [
         Locale('ja'),
-        Locale('en'),
       ],
       locale: const Locale('ja'),
     );

@@ -63,6 +63,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '342843510891',
     projectId: 'seppan-ce939',
     storageBucket: 'seppan-ce939.firebasestorage.app',
-    iosBundleId: 'com.example.seppan',
+    iosBundleId: 'com.yayo1.seppan',
   );
 }

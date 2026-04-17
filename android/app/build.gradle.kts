@@ -33,8 +33,8 @@ android {
 
     defaultConfig {
         applicationId = "com.yayo1.seppan"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 23 // Android 6.0 (required by flutter_secure_storage)
+        targetSdk = 35 // Android 15 (required by Google Play as of Aug 2025)
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

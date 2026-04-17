@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../models/expense.dart';
 import '../../providers/auth_provider.dart';
@@ -77,11 +78,13 @@ class SettingsPage extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.info_outline,
             title: '概要・ライセンス情報',
-            onTap: () {
+            onTap: () async {
+              final info = await PackageInfo.fromPlatform();
+              if (!context.mounted) return;
               showAboutDialog(
                 context: context,
                 applicationName: 'Seppan',
-                applicationVersion: '1.0.0',
+                applicationVersion: info.version,
                 applicationLegalese: '2026 Yoh Yamasaki',
               );
             },
@@ -99,6 +102,31 @@ class SettingsPage extends ConsumerWidget {
   }
 
   Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
+    // Warn user that exported CSV is plaintext (unencrypted).
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('CSVエクスポートの注意'),
+        content: const Text(
+          'エクスポートされるCSVファイルは暗号化されていない平文です。\n\n'
+          '金額、カテゴリ、メモ、パートナーの名前などが含まれますので、'
+          '保存場所および共有先にはご注意ください。\n\n'
+          '続行しますか？',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('続行'),
+          ),
+        ],
+      ),
+    );
+    if (proceed != true || !context.mounted) return;
+
     final partnership = await ref.read(currentPartnershipProvider.future);
     if (partnership == null) return;
 

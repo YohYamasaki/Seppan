@@ -7,15 +7,9 @@
 -dontwarn javax.annotation.**
 -dontwarn kotlin.Unit
 
-# Keep cryptography native bindings
--keep class org.aspect_security.** { *; }
-
 # OkHttp (used by Supabase under the hood)
 -dontwarn okhttp3.**
 -dontwarn okio.**
-
-# share_plus (R8 strips plugin classes in release builds)
--keep class dev.fluttercommunity.plus.share.** { *; }
 
 # Keep Gson/JSON serialization if used transitively
 -keepattributes Signature
