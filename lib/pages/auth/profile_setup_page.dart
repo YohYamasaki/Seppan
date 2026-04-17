@@ -60,7 +60,15 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('プロフィール設定')),
+      appBar: AppBar(
+        title: const Text('プロフィール設定'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () async {
+            await ref.read(authRepositoryProvider).signOut();
+          },
+        ),
+      ),
       body: Form(
         key: _formKey,
         child: Padding(

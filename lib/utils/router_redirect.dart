@@ -15,9 +15,9 @@ String? routerRedirect({
   final isEncryptionRoute = location.startsWith('/encryption-') ||
       location.startsWith('/fingerprint-');
 
-  // Not logged in
+  // Not logged in — only /sign-in routes are accessible
   if (!isLoggedIn) {
-    return isAuthRoute || isEncryptionRoute ? null : '/sign-in';
+    return location.startsWith('/sign-in') ? null : '/sign-in';
   }
 
   // Still loading profile — stay on current route until resolved.

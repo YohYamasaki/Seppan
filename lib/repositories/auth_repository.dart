@@ -10,6 +10,7 @@ const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
 class AuthRepository {
   Future<void> signInWithGoogle() async {
     final googleSignIn = GoogleSignIn(serverClientId: _googleWebClientId);
+    await googleSignIn.signOut(); // 前回の選択をクリアしてアカウント選択を毎回表示
     final googleUser = await googleSignIn.signIn();
     if (googleUser == null) return; // ユーザーがキャンセル
 
