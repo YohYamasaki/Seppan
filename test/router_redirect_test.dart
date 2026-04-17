@@ -397,11 +397,11 @@ void main() {
       );
     });
 
-    test('allows /fingerprint-verification when not logged in', () {
-      // Edge case: deep link to fingerprint page when logged out.
-      // Should NOT redirect to /sign-in (the page handles its own auth).
-      // Actually, this should redirect to /sign-in since user is not logged in.
-      // But we treat encryption routes as auth-adjacent.
+    test('redirects /fingerprint-verification to /sign-in when not logged in',
+        () {
+      // Not logged in — only /sign-in routes are accessible.
+      // /fingerprint-verification does not start with /sign-in,
+      // so the redirect logic sends the user to /sign-in.
       expect(
         routerRedirect(
           location: '/fingerprint-verification',
@@ -409,7 +409,71 @@ void main() {
           isProfileLoading: false,
           hasProfile: false,
         ),
+        '/sign-in',
+      );
+    });
+  });
+
+  group('Loading route', () {
+    test('redirects /loading to /home when fully set up', () {
+      expect(
+        routerRedirect(
+          location: '/loading',
+          isLoggedIn: true,
+          isProfileLoading: false,
+          hasProfile: true,
+        ),
+        '/home',
+      );
+    });
+
+    test('stays on /loading during profile loading', () {
+      expect(
+        routerRedirect(
+          location: '/loading',
+          isLoggedIn: true,
+          isProfileLoading: true,
+          hasProfile: false,
+        ),
         isNull,
+      );
+    });
+
+    test('stays on /loading during encryption check loading', () {
+      expect(
+        routerRedirect(
+          location: '/loading',
+          isLoggedIn: true,
+          isProfileLoading: false,
+          hasProfile: true,
+          isEncryptionCheckLoading: true,
+        ),
+        isNull,
+      );
+    });
+
+    test('redirects /loading to /sign-in when not logged in', () {
+      expect(
+        routerRedirect(
+          location: '/loading',
+          isLoggedIn: false,
+          isProfileLoading: false,
+          hasProfile: false,
+        ),
+        '/sign-in',
+      );
+    });
+
+    test('redirects /loading to /encryption-unlock when unlock needed', () {
+      expect(
+        routerRedirect(
+          location: '/loading',
+          isLoggedIn: true,
+          isProfileLoading: false,
+          hasProfile: true,
+          needsEncryptionUnlock: true,
+        ),
+        '/encryption-unlock',
       );
     });
   });
