@@ -169,11 +169,30 @@ class SettingsPage extends ConsumerWidget {
         return;
       }
 
+      // Check for potential duplicates against existing data
+      final repo = ref.read(expenseRepositoryProvider);
+      final existingExpenses = await repo.getAllExpenses(partnership.id);
+      final existingKeys = <String>{};
+      for (final e in existingExpenses) {
+        existingKeys.add('${e.date.toIso8601String()}|${e.paidBy}|${e.amount}');
+      }
+      var duplicateCount = 0;
+      for (final data in parsed) {
+        final key =
+            '${(data['date'] as DateTime).toIso8601String()}|${data['paidBy']}|${data['amount']}';
+        if (existingKeys.contains(key)) duplicateCount++;
+      }
+
+      final duplicateWarning = duplicateCount > 0
+          ? '\n\n⚠ ${parsed.length}件中${duplicateCount}件が既存データと重複している可能性があります。'
+          : '';
+
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('インポート確認'),
-          content: Text('${parsed.length}件のデータをインポートしますか？\n既存の履歴はそのまま保持されます。'),
+          content: Text(
+              '${parsed.length}件のデータをインポートしますか？\n既存の履歴はそのまま保持されます。$duplicateWarning'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -188,7 +207,6 @@ class SettingsPage extends ConsumerWidget {
       );
       if (confirm != true) return;
 
-      final repo = ref.read(expenseRepositoryProvider);
       for (final data in parsed) {
         await repo.addExpense(Expense(
           id: '',
@@ -309,8 +327,11 @@ class SettingsPage extends ConsumerWidget {
         //   - deletes solo partnerships + categories
         //   - deletes profile
         // No client-side pre-processing needed.
-        await ref.read(authRepositoryProvider).deleteAccount();
+        // clearAll() must run BEFORE deleteAccount() because
+        // deleteAccount() calls signOut() internally, which triggers
+        // router navigation and disposes this widget — making ref invalid.
         await ref.read(encryptionKeyNotifierProvider.notifier).clearAll();
+        await ref.read(authRepositoryProvider).deleteAccount();
         if (context.mounted) context.go('/sign-in');
       } catch (e) {
         if (context.mounted) {

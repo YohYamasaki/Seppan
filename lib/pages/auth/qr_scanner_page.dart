@@ -45,8 +45,21 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
     if (user == null) return;
 
     try {
-      // Remember joiner's old pending partnership for post-join migration
+      // Self-join guard: prevent pairing with your own partnership
       final partnershipRepo = ref.read(partnershipRepositoryProvider);
+      final targetPartnership =
+          await partnershipRepo.getPartnership(partnershipId);
+      if (targetPartnership != null && targetPartnership.user1Id == user.id) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('自分自身のQRコードはスキャンできません')),
+          );
+          setState(() => _processing = false);
+        }
+        return;
+      }
+
+      // Remember joiner's old pending partnership for post-join migration
       final oldPending = await partnershipRepo.getPendingPartnership(user.id);
 
       // Generate ECDH key pair
