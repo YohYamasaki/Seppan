@@ -65,6 +65,11 @@ android {
     }
 }
 
+// Suppress Java 8 source/target obsolete warnings from plugins
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("-Xlint:-options")
+}
+
 flutter {
     source = "../.."
 }
