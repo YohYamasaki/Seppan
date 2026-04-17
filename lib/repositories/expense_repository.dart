@@ -123,16 +123,6 @@ class ExpenseRepository {
         .eq('partnership_id', partnershipId);
   }
 
-  Future<void> migrateExpenses(
-    String fromPartnershipId,
-    String toPartnershipId,
-  ) async {
-    await supabase
-        .from(_table)
-        .update({'partnership_id': toPartnershipId})
-        .eq('partnership_id', fromPartnershipId);
-  }
-
   /// Migrate expenses to a new partnership, re-encrypting with the new AAD.
   /// If no encryption key is available, skips migration entirely — plain
   /// migration (changing partnership_id without re-encrypting) would

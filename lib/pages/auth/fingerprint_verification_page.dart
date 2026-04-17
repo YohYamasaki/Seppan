@@ -39,6 +39,7 @@ class _FingerprintVerificationPageState
   String _fingerprint = '';
   bool _loading = true;
   bool _confirming = false;
+  bool _handlingUpdate = false;
   StreamSubscription<Partnership>? _watchSub;
   Timer? _timeout;
   Timer? _pollTimer;
@@ -205,7 +206,9 @@ class _FingerprintVerificationPageState
   }
 
   Future<void> _handleJoinerUpdate(Partnership partnership) async {
+    if (_handlingUpdate) return;
     if (partnership.wrappedPartnershipKey == null || !mounted) return;
+    _handlingUpdate = true;
 
     // A cancelled: empty string signals cancellation
     if (partnership.wrappedPartnershipKey!.isEmpty) {
@@ -236,15 +239,19 @@ class _FingerprintVerificationPageState
       final oldKey = ref.read(encryptionKeyNotifierProvider);
       final user = ref.read(currentUserProvider);
       final userId = user?.id ?? '';
+      final encNotifier = ref.read(encryptionKeyNotifierProvider.notifier);
+
+      // Persist old key so re-encryption can resume after a crash
+      if (oldKey != null) {
+        await encNotifier.savePendingOldKey(partnership.id, oldKey);
+      }
 
       // Save initiator's key to memory + secure storage cache
-      await ref
-          .read(encryptionKeyNotifierProvider.notifier)
-          .saveReceivedKey(
-            partnershipId: partnership.id,
-            userId: userId,
-            rawKey: rawKey,
-          );
+      await encNotifier.saveReceivedKey(
+        partnershipId: partnership.id,
+        userId: userId,
+        rawKey: rawKey,
+      );
 
       // Re-encrypt joiner's existing expenses from old key to new key
       if (oldKey != null) {
@@ -255,6 +262,8 @@ class _FingerprintVerificationPageState
           oldKey: oldKey,
           newKey: rawKey,
         );
+        // Re-encryption complete — safe to discard old key
+        await encNotifier.clearPendingOldKey(partnership.id);
       }
 
       // B activates the partnership — this is the final handshake

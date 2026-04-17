@@ -64,12 +64,18 @@ class CsvService {
       final userId = nameToUserId[name];
       if (userId == null) continue; // unknown user, skip
 
+      final amount = int.tryParse(row[2].toString()) ?? 0;
+      if (amount <= 0) continue; // skip invalid amounts
+
+      final ratio =
+          (double.tryParse(row[4].toString()) ?? 0.5).clamp(0.0, 1.0);
+
       result.add({
         'date': _dateFormat.parse(row[0].toString()),
         'paidBy': userId,
-        'amount': int.tryParse(row[2].toString()) ?? 0,
+        'amount': amount,
         'currency': row[3].toString(),
-        'ratio': double.tryParse(row[4].toString()) ?? 0.5,
+        'ratio': ratio,
         'category': row[5].toString(),
         'memo': row[6].toString(),
       });

@@ -218,6 +218,34 @@ class EncryptionKeyNotifier extends _$EncryptionKeyNotifier {
     return true;
   }
 
+  // ── Pending old key for crash-safe re-encryption ─────────────
+
+  static const _pendingOldKeyPrefix = 'pending_old_key_';
+
+  /// Save the old encryption key before re-encryption starts.
+  /// If the app crashes mid-re-encryption, this key can be recovered
+  /// to resume the process.
+  Future<void> savePendingOldKey(
+      String partnershipId, Uint8List oldKey) async {
+    await _storage.write(
+      key: '$_pendingOldKeyPrefix$partnershipId',
+      value: _bytesToHex(oldKey),
+    );
+  }
+
+  /// Clear the pending old key after re-encryption completes successfully.
+  Future<void> clearPendingOldKey(String partnershipId) async {
+    await _storage.delete(key: '$_pendingOldKeyPrefix$partnershipId');
+  }
+
+  /// Retrieve a pending old key (non-null means re-encryption was interrupted).
+  Future<Uint8List?> getPendingOldKey(String partnershipId) async {
+    final hex =
+        await _storage.read(key: '$_pendingOldKeyPrefix$partnershipId');
+    if (hex == null) return null;
+    return _hexToBytes(hex);
+  }
+
   /// Ensure the current in-memory key is cached under [partnershipId].
   /// No-op if the key is null.
   Future<void> ensureCached(String partnershipId) async {

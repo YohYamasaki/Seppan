@@ -121,14 +121,30 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     if (confirm != true) return;
 
     final repo = ref.read(expenseRepositoryProvider);
+    var deleted = 0;
     for (final id in _selectedIds) {
-      await repo.deleteExpense(id);
+      try {
+        await repo.deleteExpense(id);
+        deleted++;
+      } catch (_) {
+        // Continue deleting remaining items
+      }
     }
 
+    // Always invalidate caches even on partial success
     ref.invalidate(recentExpensesProvider);
     ref.invalidate(balanceSummaryProvider);
     ref.invalidate(categoryBreakdownProvider);
     ref.read(expenseDataVersionProvider.notifier).state++;
+
+    if (mounted) {
+      final failed = count - deleted;
+      if (failed > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$deleted件を削除しました（$failed件は失敗）')),
+        );
+      }
+    }
     // _refresh is triggered by expenseDataVersionProvider listener
   }
 

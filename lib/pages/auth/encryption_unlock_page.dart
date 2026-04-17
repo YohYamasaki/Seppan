@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/encryption_provider.dart';
 import '../../providers/partnership_provider.dart';
+import '../../repositories/expense_repository.dart';
 
 class EncryptionUnlockPage extends ConsumerStatefulWidget {
   const EncryptionUnlockPage({super.key});
@@ -47,6 +48,9 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
     if (!mounted) return;
 
     if (success) {
+      // Resume interrupted re-encryption if a pending old key exists
+      await _resumeReencryptionIfNeeded(partnership, user.id);
+      if (!mounted) return;
       context.go('/home');
     } else {
       setState(() => _unlocking = false);
@@ -54,6 +58,28 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
         context,
       ).showSnackBar(const SnackBar(content: Text('パスワードが正しくありません')));
     }
+  }
+
+  /// If a previous re-encryption was interrupted (app crash during key
+  /// exchange), resume it now that we have the new key in memory.
+  Future<void> _resumeReencryptionIfNeeded(
+    dynamic partnership,
+    String userId,
+  ) async {
+    final notifier = ref.read(encryptionKeyNotifierProvider.notifier);
+    final oldKey = await notifier.getPendingOldKey(partnership.id);
+    if (oldKey == null) return; // No interrupted re-encryption
+
+    final newKey = ref.read(encryptionKeyNotifierProvider);
+    if (newKey == null) return;
+
+    await ExpenseRepository(encryptionKey: newKey).reencryptUserExpenses(
+      partnershipId: partnership.id,
+      userId: userId,
+      oldKey: oldKey,
+      newKey: newKey,
+    );
+    await notifier.clearPendingOldKey(partnership.id);
   }
 
   @override
