@@ -172,12 +172,21 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           final item = e.value;
           final pct = total > 0 ? (item.amount / total * 100) : 0;
           return ListTile(
-            onTap: () => context.push(
-              '/stats/category-detail'
-              '?category=${Uri.encodeComponent(item.category)}'
-              '&year=${_month.year}'
-              '&month=${_month.month}',
-            ),
+            onTap: () {
+              // Use the parent route matching the current location so that
+              // back navigation stays consistent (e.g. /stats-view when
+              // pushed from home, /stats when on the stats tab).
+              final loc = GoRouterState.of(context).matchedLocation;
+              final base = loc.startsWith('/stats-view')
+                  ? '/stats-view/category-detail'
+                  : '/stats/category-detail';
+              context.push(
+                '$base'
+                '?category=${Uri.encodeComponent(item.category)}'
+                '&year=${_month.year}'
+                '&month=${_month.month}',
+              );
+            },
             leading: Container(
               width: 12,
               height: 12,

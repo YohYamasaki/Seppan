@@ -137,7 +137,7 @@ class HomePage extends ConsumerWidget {
                           breakdown: breakdown,
                           month: now,
                           userName: myName,
-                          onTap: () => context.go('/stats'),
+                          onTap: () => context.push('/stats-view'),
                         )
                       : const SizedBox.shrink(),
                   loading: () {
@@ -160,7 +160,7 @@ class HomePage extends ConsumerWidget {
 
               // Recent history
               MainCard(
-                onTap: () => context.go('/history'),
+                onTap: () => context.push('/history-view'),
                 header: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

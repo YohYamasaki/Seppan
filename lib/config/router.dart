@@ -263,6 +263,37 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ExpenseInputPage(),
       ),
+
+      // History as full-screen push route (from home "もっと見る").
+      // Pushed on root navigator so back navigation returns to home,
+      // unlike the /history tab which switches tabs in the shell.
+      GoRoute(
+        path: '/history-view',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HistoryPage(),
+      ),
+
+      // Stats as full-screen push route (from home's category card).
+      // Same pattern as /history-view — pushed on root navigator so
+      // back navigation returns to home.
+      GoRoute(
+        path: '/stats-view',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const StatsPage(),
+        routes: [
+          GoRoute(
+            path: 'category-detail',
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => CategoryDetailPage(
+              category: state.uri.queryParameters['category'] ?? '',
+              year: int.parse(
+                  state.uri.queryParameters['year'] ?? '2026'),
+              month: int.parse(
+                  state.uri.queryParameters['month'] ?? '1'),
+            ),
+          ),
+        ],
+      ),
     ],
   );
 }
