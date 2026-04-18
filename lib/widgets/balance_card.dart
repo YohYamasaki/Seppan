@@ -21,10 +21,30 @@ class BalanceCard extends StatelessWidget {
   final int partnerIconId;
   final int balance;
 
+  // My avatar is always larger than partner's, so users can tell at a
+  // glance which side represents themselves.
+  static const double _myRadius = 32;
+  static const double _partnerRadius = 24;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // Glow/border color based on each side's state.
+    // balance > 0 → I'm plus (green), partner is minus (red)
+    // balance < 0 → I'm minus (red), partner is plus (green)
+    // balance = 0 → no glow
+    final Color? myGlowColor = balance > 0
+        ? Colors.green
+        : balance < 0
+        ? Colors.red
+        : null;
+    final Color? partnerGlowColor = balance > 0
+        ? Colors.red
+        : balance < 0
+        ? Colors.green
+        : null;
 
     return MainCard(
       header: Text('支払い状況', style: theme.textTheme.displayMedium),
@@ -32,12 +52,17 @@ class BalanceCard extends StatelessWidget {
         children: [
           // Dual avatar row
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // My side
               Expanded(
                 child: Column(
                   children: [
-                    AvatarIcon(iconId: myIconId, radius: 28),
+                    _StyledAvatar(
+                      iconId: myIconId,
+                      radius: _myRadius,
+                      glowColor: myGlowColor,
+                    ),
                     const Gap(6),
                     Text(
                       myName,
@@ -48,7 +73,7 @@ class BalanceCard extends StatelessWidget {
                 ),
               ),
 
-              // Center: arrow + amount
+              // Center: amount with +/- sign
               Expanded(
                 flex: 2,
                 child: _buildCenterSection(context, colorScheme),
@@ -58,7 +83,11 @@ class BalanceCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    AvatarIcon(iconId: partnerIconId, radius: 28),
+                    _StyledAvatar(
+                      iconId: partnerIconId,
+                      radius: _partnerRadius,
+                      glowColor: partnerGlowColor,
+                    ),
                     const Gap(6),
                     Text(
                       partnerName,
@@ -75,10 +104,10 @@ class BalanceCard extends StatelessWidget {
           // Status message
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             decoration: BoxDecoration(
               color: _statusColor(colorScheme).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
               _statusMessage,
@@ -112,24 +141,20 @@ class BalanceCard extends StatelessWidget {
       );
     }
 
-    // Arrow points from debtor → creditor
-    final amountColor = balance > 0 ? colorScheme.primary : colorScheme.error;
-    final arrowIcon =
-        balance > 0 ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded;
+    // Positive balance = partner owes me → + in success color (green).
+    // Negative balance = I owe partner → - in error color.
+    final amountColor = balance > 0 ? Colors.green : colorScheme.error;
+    final sign = balance > 0 ? '+' : '-';
 
-    return Column(
-      children: [
-        Text(
-          formatJpy(balance.abs()),
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: amountColor,
-          ),
+    return Center(
+      child: Text(
+        '$sign${formatJpy(balance.abs())}',
+        style: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          color: amountColor,
         ),
-        const Gap(2),
-        Icon(arrowIcon, color: amountColor, size: 28),
-      ],
+      ),
     );
   }
 
@@ -145,5 +170,42 @@ class BalanceCard extends StatelessWidget {
       return '$myNameさんが${formatJpy(balance)}多く支払っています';
     }
     return '$myNameさんが${formatJpy(balance.abs())}分支払ってください';
+  }
+}
+
+/// Avatar with an optional glowing border.
+class _StyledAvatar extends StatelessWidget {
+  const _StyledAvatar({
+    required this.iconId,
+    required this.radius,
+    this.glowColor,
+  });
+
+  final int iconId;
+  final double radius;
+  final Color? glowColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasGlow = glowColor != null;
+    return Container(
+      padding: hasGlow ? const EdgeInsets.all(2) : null,
+      decoration: hasGlow
+          ? BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: glowColor!.withValues(alpha: 0.5),
+                width: 3,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: glowColor!.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                ),
+              ],
+            )
+          : null,
+      child: AvatarIcon(iconId: iconId, radius: radius),
+    );
   }
 }
