@@ -29,8 +29,7 @@ class PartnershipManagePage extends ConsumerWidget {
           }
 
           final profile = ref.watch(currentProfileProvider).valueOrNull;
-          final partnerProfile =
-              ref.watch(partnerProfileProvider).valueOrNull;
+          final partnerProfile = ref.watch(partnerProfileProvider).valueOrNull;
           final myName = profile?.displayName ?? '';
           final myIconId = profile?.iconId ?? 1;
           final partnerName = partnerProfile?.displayName ?? 'パートナー';
@@ -55,23 +54,27 @@ class PartnershipManagePage extends ConsumerWidget {
                               children: [
                                 AvatarIcon(iconId: myIconId, radius: 32),
                                 const Gap(8),
-                                Text(myName,
-                                    style: theme.textTheme.bodyLarge),
+                                Text(myName, style: theme.textTheme.bodyLarge),
                               ],
                             ),
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 24),
-                              child: Icon(Icons.link,
-                                  size: 28, color: colorScheme.primary),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              child: Icon(
+                                Icons.link,
+                                size: 28,
+                                color: colorScheme.primary,
+                              ),
                             ),
                             Column(
                               children: [
-                                AvatarIcon(
-                                    iconId: partnerIconId, radius: 32),
+                                AvatarIcon(iconId: partnerIconId, radius: 32),
                                 const Gap(8),
-                                Text(partnerName,
-                                    style: theme.textTheme.bodyLarge),
+                                Text(
+                                  partnerName,
+                                  style: theme.textTheme.bodyLarge,
+                                ),
                               ],
                             ),
                           ],
@@ -79,7 +82,9 @@ class PartnershipManagePage extends ConsumerWidget {
                         const Gap(16),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
@@ -122,25 +127,108 @@ class PartnershipManagePage extends ConsumerWidget {
   }
 
   Future<void> _confirmArchive(
-      BuildContext context, WidgetRef ref, Partnership partnership) async {
+    BuildContext context,
+    WidgetRef ref,
+    Partnership partnership,
+  ) async {
+    final controller = TextEditingController();
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('パートナーシップを解除しますか？'),
-        content: const Text('これまでに入力した支払い履歴はお互いのアカウントからすべて削除されます。この操作は取り消せません。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('解除'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final canConfirm = controller.text == '解除';
+            return AlertDialog(
+              title: const Text('パートナーシップを解除しますか？'),
+              scrollable: true,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'これまでに入力した支払い履歴はお互いのアカウントから'
+                    'すべて削除されます。この操作は取り消せません。',
+                  ),
+                  const SizedBox(height: 12),
+                  // Backup recommendation
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withValues(
+                        alpha: 0.3,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            '再リンクの可能性がある場合は、事前に履歴データを'
+                            'CSVエクスポートしてバックアップしておくことを'
+                            'おすすめします。',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('本当に実行する場合は「解除」と入力してください。'),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: InputDecoration(
+                      hintText: '解除',
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: colorScheme.outline),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('キャンセル'),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: canConfirm
+                        ? Colors.red
+                        : colorScheme.outline,
+                  ),
+                  onPressed: canConfirm
+                      ? () => Navigator.pop(context, true)
+                      : null,
+                  child: const Text('解除'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
+    // Do NOT dispose controller here — the dialog's TextField may still
+    // reference it during unmount (focus change → clearComposing).
+
     if (result == true) {
       final repo = ref.read(partnershipRepositoryProvider);
 
@@ -162,9 +250,9 @@ class PartnershipManagePage extends ConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('パートナーシップの解除に失敗しました: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('パートナーシップの解除に失敗しました: $e')));
         }
       }
     }

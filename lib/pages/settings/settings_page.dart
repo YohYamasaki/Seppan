@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -27,8 +28,9 @@ class SettingsPage extends ConsumerWidget {
             icon: Icons.face,
             title: '名前・アイコンの変更',
             onTap: () async {
-              final updated =
-                  await context.push<bool>('/settings/profile-edit');
+              final updated = await context.push<bool>(
+                '/settings/profile-edit',
+              );
               if (updated == true) {
                 ref.invalidate(currentProfileProvider);
               }
@@ -133,7 +135,9 @@ class SettingsPage extends ConsumerWidget {
     final repo = ref.read(expenseRepositoryProvider);
     final user = ref.read(currentUserProvider);
     final partnerProfile = await ref.read(partnerProfileProvider.future);
-    final myProfile = await ref.read(profileRepositoryProvider).getProfile(user!.id);
+    final myProfile = await ref
+        .read(profileRepositoryProvider)
+        .getProfile(user!.id);
 
     final userNames = <String, String>{};
     if (myProfile != null) userNames[myProfile.id] = myProfile.displayName;
@@ -148,20 +152,39 @@ class SettingsPage extends ConsumerWidget {
         userNames: userNames,
       );
       if (saved && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('CSVを保存しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('CSVを保存しました')));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('エクスポートに失敗しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('エクスポートに失敗しました: $e')));
       }
     }
   }
 
   Future<void> _importCsv(BuildContext context, WidgetRef ref) async {
+    // Resolve my/partner names for the sample CSV and for parsing.
+    final user = ref.read(currentUserProvider);
+    final partnerProfile = await ref.read(partnerProfileProvider.future);
+    final myProfile = await ref
+        .read(profileRepositoryProvider)
+        .getProfile(user!.id);
+    if (!context.mounted) return;
+
+    final myName = myProfile?.displayName ?? '自分';
+    final partnerName = partnerProfile?.displayName ?? 'パートナー';
+
+    // Show info modal before opening file picker.
+    final proceed = await _showImportInfoDialog(
+      context,
+      myName: myName,
+      partnerName: partnerName,
+    );
+    if (proceed != true || !context.mounted) return;
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
@@ -170,10 +193,6 @@ class SettingsPage extends ConsumerWidget {
 
     final partnership = await ref.read(currentPartnershipProvider.future);
     if (partnership == null) return;
-
-    final user = ref.read(currentUserProvider);
-    final partnerProfile = await ref.read(partnerProfileProvider.future);
-    final myProfile = await ref.read(profileRepositoryProvider).getProfile(user!.id);
 
     final nameToUserId = <String, String>{};
     if (myProfile != null) nameToUserId[myProfile.displayName] = myProfile.id;
@@ -190,9 +209,9 @@ class SettingsPage extends ConsumerWidget {
 
       if (parsed.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('インポートするデータがありません')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('インポートするデータがありません')));
         }
         return;
       }
@@ -220,7 +239,8 @@ class SettingsPage extends ConsumerWidget {
         builder: (context) => AlertDialog(
           title: const Text('インポート確認'),
           content: Text(
-              '${parsed.length}件のデータをインポートしますか？\n既存の履歴はそのまま保持されます。$duplicateWarning'),
+            '${parsed.length}件のデータをインポートしますか？\n既存の履歴はそのまま保持されます。$duplicateWarning',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -236,31 +256,165 @@ class SettingsPage extends ConsumerWidget {
       if (confirm != true) return;
 
       for (final data in parsed) {
-        await repo.addExpense(Expense(
-          id: '',
-          partnershipId: partnership.id,
-          paidBy: data['paidBy'] as String,
-          amount: data['amount'] as int,
-          currency: data['currency'] as String,
-          ratio: data['ratio'] as double,
-          date: data['date'] as DateTime,
-          category: data['category'] as String,
-          memo: data['memo'] as String,
-          createdAt: DateTime.now(),
-        ));
+        await repo.addExpense(
+          Expense(
+            id: '',
+            partnershipId: partnership.id,
+            paidBy: data['paidBy'] as String,
+            amount: data['amount'] as int,
+            currency: data['currency'] as String,
+            ratio: data['ratio'] as double,
+            date: data['date'] as DateTime,
+            category: data['category'] as String,
+            memo: data['memo'] as String,
+            createdAt: DateTime.now(),
+          ),
+        );
       }
 
       ref.read(expenseDataVersionProvider.notifier).state++;
 
       if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${parsed.length}件をインポートしました')));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('インポートに失敗しました: $e')));
+      }
+    }
+  }
+
+  /// Info dialog shown before the file picker. Explains the required CSV
+  /// format, offers a sample download, and requires the user to confirm
+  /// that their names match exactly.
+  Future<bool?> _showImportInfoDialog(
+    BuildContext context, {
+    required String myName,
+    required String partnerName,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return AlertDialog(
+          title: const Text('CSVインポートについて'),
+          scrollable: true,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'CSVファイルは以下のフォーマットで作成されている必要があります。'
+                'フォーマットが異なる場合、インポートできません。',
+              ),
+              const SizedBox(height: 8),
+              // Format summary
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '列: 日付, 支払者, 金額, 通貨, 負担率, カテゴリ, メモ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Sample download button
+              OutlinedButton.icon(
+                icon: const Icon(Icons.download_outlined, size: 18),
+                label: const Text('サンプルCSVをダウンロード'),
+                onPressed: () => _downloadSampleCsv(
+                  context,
+                  myName: myName,
+                  partnerName: partnerName,
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Name matching warning
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      size: 18,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'CSV内の「支払者」は、現在のプロフィール名と完全に一致'
+                        'している必要があります（「$myName」または「$partnerName」）。'
+                        '一致しない行はスキップされます。',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('インポート'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _downloadSampleCsv(
+    BuildContext context, {
+    required String myName,
+    required String partnerName,
+  }) async {
+    // Use current profile names so the sample is ready-to-import as-is.
+    final csv = '日付,支払者,金額,通貨,負担率,カテゴリ,メモ\n'
+        '2026-04-01,$myName,1200,JPY,0.5,食費,ランチ\n'
+        '2026-04-03,$partnerName,3500,JPY,0.5,日用品,洗剤\n'
+        '2026-04-05,$myName,800,JPY,0.75,交通費,バス往復\n';
+
+    try {
+      final saved = await FilePicker.platform.saveFile(
+        dialogTitle: 'サンプルCSVを保存',
+        fileName: 'seppan_sample.csv',
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        bytes: utf8.encode(csv),
+      );
+      if (saved != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${parsed.length}件をインポートしました')),
+          const SnackBar(content: Text('サンプルCSVを保存しました')),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('インポートに失敗しました: $e')),
+          SnackBar(content: Text('保存に失敗しました: $e')),
         );
       }
     }
@@ -294,55 +448,96 @@ class SettingsPage extends ConsumerWidget {
     final controller = TextEditingController();
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('アカウント削除'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'ユーザーデータ、入力された支払い履歴がすべて消去されます。\n'
-              'パートナーとのリンクは自動的に解除され、リンク相手があなたの代わりに入力した履歴もすべて削除されます。\n'
-              'この操作は取り消すことができません。\n\n'
-              '本当に実行する場合は「削除」と入力してください。',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: '削除',
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline,
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final canConfirm = controller.text == '削除';
+            return AlertDialog(
+              title: const Text('アカウント削除'),
+              scrollable: true,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ユーザーデータ、入力された支払い履歴がすべて消去されます。\n'
+                    'パートナーとのリンクは自動的に解除され、プライバシー保護のため'
+                    'リンク相手が入力した履歴もすべて削除されます。\n'
+                    'この操作は取り消すことができません。',
                   ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2,
+                  const SizedBox(height: 12),
+                  // Backup recommendation
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer
+                          .withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            '履歴データを残したい場合は、事前にCSVエクスポートして'
+                            'バックアップしておくことをおすすめします。',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  const Text('本当に実行する場合は「削除」と入力してください。'),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: InputDecoration(
+                      hintText: '削除',
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: colorScheme.outline),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () {
-              if (controller.text == '削除') {
-                Navigator.pop(context, true);
-              }
-            },
-            child: const Text('削除'),
-          ),
-        ],
-      ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('キャンセル'),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor:
+                        canConfirm ? Colors.red : colorScheme.outline,
+                  ),
+                  onPressed: canConfirm
+                      ? () => Navigator.pop(context, true)
+                      : null,
+                  child: const Text('削除'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
     // Do NOT dispose controller here — the dialog's TextField may still
     // reference it during unmount (focus change → clearComposing).
@@ -363,9 +558,9 @@ class SettingsPage extends ConsumerWidget {
         if (context.mounted) context.go('/sign-in');
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('アカウント削除に失敗しました: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('アカウント削除に失敗しました: $e')));
         }
       }
     }
