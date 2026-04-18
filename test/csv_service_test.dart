@@ -14,6 +14,43 @@ String buildCsv(List<List<String>> rows) {
 
 void main() {
   group('parseExpenses', () {
+    test('parses Unix line endings (\\n)', () {
+      // Regression test: CsvToListConverter's default eol is '\r\n',
+      // which caused files with Unix line endings to be treated as
+      // a single row and rejected as empty.
+      const csv = '日付,支払者,金額,通貨,負担率,カテゴリ,メモ\n'
+          '2024-01-15,Alice,1000,JPY,0.5,食費,ランチ\n'
+          '2024-01-16,Bob,2000,JPY,0.5,交通費,電車';
+      final result = CsvService.parseExpenses(
+        csvContent: csv,
+        nameToUserId: nameToUserId,
+      );
+      expect(result, hasLength(2));
+      expect(result[0]['amount'], 1000);
+      expect(result[1]['amount'], 2000);
+    });
+
+    test('parses CRLF line endings (\\r\\n)', () {
+      const csv = '日付,支払者,金額,通貨,負担率,カテゴリ,メモ\r\n'
+          '2024-01-15,Alice,1000,JPY,0.5,食費,ランチ\r\n'
+          '2024-01-16,Bob,2000,JPY,0.5,交通費,電車';
+      final result = CsvService.parseExpenses(
+        csvContent: csv,
+        nameToUserId: nameToUserId,
+      );
+      expect(result, hasLength(2));
+    });
+
+    test('parses mixed/lone CR line endings (\\r)', () {
+      const csv = '日付,支払者,金額,通貨,負担率,カテゴリ,メモ\r'
+          '2024-01-15,Alice,1000,JPY,0.5,食費,ランチ';
+      final result = CsvService.parseExpenses(
+        csvContent: csv,
+        nameToUserId: nameToUserId,
+      );
+      expect(result, hasLength(1));
+    });
+
     test('valid CSV parses correctly', () {
       final csv = buildCsv([
         ['2024-01-15', 'Alice', '1000', 'JPY', '0.5', '食費', 'ランチ'],

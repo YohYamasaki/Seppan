@@ -51,7 +51,12 @@ class CsvService {
     required String csvContent,
     required Map<String, String> nameToUserId,
   }) {
-    final rows = const CsvToListConverter().convert(csvContent);
+    // Normalize line endings: CsvToListConverter's default eol is '\r\n',
+    // so files saved with Unix line endings (\n only) would be parsed as
+    // a single row and rejected. Convert all variants to '\n' and tell
+    // the parser to use '\n' as eol.
+    final normalized = csvContent.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final rows = const CsvToListConverter(eol: '\n').convert(normalized);
     if (rows.length < 2) return []; // header only or empty
 
     final result = <Map<String, dynamic>>[];
