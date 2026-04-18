@@ -72,6 +72,50 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
     });
   }
 
+  Future<void> _showAmountInputModal() async {
+    final total = int.tryParse(_amountController.text.replaceAll(',', '')) ?? 0;
+
+    if (total <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('先に金額を入力してください')));
+      return;
+    }
+
+    final user = ref.read(currentUserProvider);
+    final profile = ref.read(currentProfileProvider).valueOrNull;
+    final partnerProfile = ref.read(partnerProfileProvider).valueOrNull;
+    final myName = profile?.displayName ?? '自分';
+    final partnerName = partnerProfile?.displayName ?? 'パートナー';
+    final isMyPayment = _payerUserId == user?.id;
+
+    // Initial: current my burden
+    final currentMyBurden = isMyPayment
+        ? (total * _ratio).round()
+        : (total * (1 - _ratio)).round();
+
+    final result = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => _AmountInputSheet(
+        total: total,
+        initialMyBurden: currentMyBurden,
+        myName: myName,
+        partnerName: partnerName,
+      ),
+    );
+
+    if (result != null && mounted) {
+      // _ratio は支払者の負担率。自分が支払者なら自分の負担率、
+      // 相手が支払者なら相手の負担率 (= 1 - 自分の負担率)
+      final myBurdenRatio = result / total;
+      setState(() {
+        _ratio = isMyPayment ? myBurdenRatio : 1 - myBurdenRatio;
+      });
+    }
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -190,9 +234,9 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                 Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Stack(
@@ -214,10 +258,9 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: 0.3),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -227,83 +270,86 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                         ),
                       ),
                       // Segments
-                      SizedBox.expand(child: Row(
-                        children: [
-                          // My segment
-                          Expanded(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                setState(() {
-                                  _payerUserId = user?.id;
-                                });
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  AvatarIcon(
-                                      iconId: myIconId, radius: 10),
-                                  const Gap(6),
-                                  Text(
-                                    myName,
-                                    style: TextStyle(
-                                      color: isMyPayment
-                                          ? Colors.white
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                      fontWeight: isMyPayment
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                      fontSize: 14,
+                      SizedBox.expand(
+                        child: Row(
+                          children: [
+                            // My segment
+                            Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  setState(() {
+                                    _payerUserId = user?.id;
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    AvatarIcon(iconId: myIconId, radius: 10),
+                                    const Gap(6),
+                                    Text(
+                                      myName,
+                                      style: TextStyle(
+                                        color: isMyPayment
+                                            ? Colors.white
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                        fontWeight: isMyPayment
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          // Partner segment
-                          Expanded(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                setState(() {
-                                  final p = partnership;
-                                  if (p != null) {
-                                    _payerUserId = p.user1Id == user?.id
-                                        ? p.user2Id
-                                        : p.user1Id;
-                                  }
-                                });
-                              },
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  AvatarIcon(
-                                      iconId: partnerIconId, radius: 10),
-                                  const Gap(6),
-                                  Text(
-                                    partnerName,
-                                    style: TextStyle(
-                                      color: !isMyPayment
-                                          ? Colors.white
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                      fontWeight: !isMyPayment
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                      fontSize: 14,
+                            // Partner segment
+                            Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  setState(() {
+                                    final p = partnership;
+                                    if (p != null) {
+                                      _payerUserId = p.user1Id == user?.id
+                                          ? p.user2Id
+                                          : p.user1Id;
+                                    }
+                                  });
+                                },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    AvatarIcon(
+                                      iconId: partnerIconId,
+                                      radius: 10,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                                    const Gap(6),
+                                    Text(
+                                      partnerName,
+                                      style: TextStyle(
+                                        color: !isMyPayment
+                                            ? Colors.white
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                        fontWeight: !isMyPayment
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      )),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -314,6 +360,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
+                autofocus: !_isEditing,
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -333,7 +380,29 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
               const Gap(20),
 
               // Ratio – segmented bar
-              const Text('負担率', style: TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  const Text(
+                    '負担率',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: _showAmountInputModal,
+                    icon: const Icon(Icons.calculate_outlined, size: 16),
+                    label: const Text(
+                      '負担を詳細入力',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                  ),
+                ],
+              ),
               const Gap(12),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -346,7 +415,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                   const dur = Duration(milliseconds: 150);
                   const curve = Curves.easeOutExpo;
                   final atEdge = myPercent <= 0.05 || myPercent >= 0.95;
-                  final gap = atEdge ? 0.0 : 4.0;
+                  final gap = atEdge ? 0.0 : 5.0;
                   final innerR = Radius.circular(atEdge ? 24 : 4);
 
                   return GestureDetector(
@@ -594,13 +663,15 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
 
               // Category
               Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
                   const Text(
                     'ジャンル',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
-                  TextButton(
+                  TextButton.icon(
                     onPressed: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute(
@@ -609,7 +680,12 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                       );
                       ref.invalidate(categoriesProvider);
                     },
-                    child: const Text('編集'),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text('編集', style: TextStyle(fontSize: 12)),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
                   ),
                 ],
               ),
@@ -673,6 +749,139 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Bottom sheet for entering burden by amount instead of ratio.
+///
+/// Extracted as a StatefulWidget so that the TextEditingController's
+/// lifecycle is managed by the framework (disposed only when the widget
+/// is unmounted, after the closing animation completes). Using a manual
+/// dispose after showModalBottomSheet's Future completes caused a
+/// `_dependents.isEmpty` assertion because the TextField still held
+/// a listener during the closing animation.
+class _AmountInputSheet extends StatefulWidget {
+  const _AmountInputSheet({
+    required this.total,
+    required this.initialMyBurden,
+    required this.myName,
+    required this.partnerName,
+  });
+
+  final int total;
+  final int initialMyBurden;
+  final String myName;
+  final String partnerName;
+
+  @override
+  State<_AmountInputSheet> createState() => _AmountInputSheetState();
+}
+
+class _AmountInputSheetState extends State<_AmountInputSheet> {
+  late final TextEditingController _controller;
+  int _myBurden = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.initialMyBurden.toString(),
+    );
+    _myBurden = widget.initialMyBurden;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    setState(() {
+      _myBurden = int.tryParse(value.replaceAll(',', '')) ?? 0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isValid = _myBurden >= 0 && _myBurden <= widget.total;
+    final partnerBurden = isValid ? widget.total - _myBurden : 0;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 8,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '金額で負担を入力',
+            style: Theme.of(context).textTheme.titleLarge,
+            textAlign: TextAlign.center,
+          ),
+          const Gap(4),
+          Text(
+            '合計 ${formatJpy(widget.total)}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const Gap(20),
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            onChanged: _onChanged,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
+              labelText: '${widget.myName}の負担額',
+              prefixText: '¥ ',
+              border: const OutlineInputBorder(),
+              errorText: !isValid
+                  ? '0〜${formatJpy(widget.total)} の範囲で入力してください'
+                  : null,
+            ),
+          ),
+          const Gap(16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${widget.partnerName}の負担額',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Text(
+                  isValid ? formatJpy(partnerBurden) : '-',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Gap(24),
+          FilledButton(
+            onPressed: isValid ? () => Navigator.pop(context, _myBurden) : null,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+            child: const Text('確定', style: TextStyle(fontSize: 16)),
+          ),
+        ],
       ),
     );
   }
