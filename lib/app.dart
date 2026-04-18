@@ -14,6 +14,7 @@ class SeppanApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Seppan',
+      debugShowCheckedModeBanner: false,
       theme: seppanLightTheme(),
       routerConfig: goRouter,
       localizationsDelegates: const [
@@ -21,9 +22,7 @@ class SeppanApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('ja'),
-      ],
+      supportedLocales: const [Locale('ja')],
       locale: const Locale('ja'),
     );
   }

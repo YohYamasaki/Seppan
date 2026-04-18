@@ -266,6 +266,18 @@ class _InvitePageState extends ConsumerState<InvitePage> {
               textAlign: TextAlign.center,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
+            const Gap(8),
+            Text(
+              'Seppanアプリ内のQRリーダー（下の「パートナーのQRコードをスキャン」）から読み取る必要があります。カメラアプリでは読み取れません。',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.7),
+                fontSize: 13,
+              ),
+            ),
             const Gap(24),
             QrImageView(
               data: _qrData,
