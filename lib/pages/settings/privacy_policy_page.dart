@@ -14,7 +14,7 @@ class PrivacyPolicyPage extends StatelessWidget {
         children: [
           Text('プライバシーポリシー', style: theme.textTheme.displayMedium),
           const SizedBox(height: 4),
-          Text('最終更新日: 2026年4月17日', style: theme.textTheme.bodySmall),
+          Text('最終更新日: 2026年4月21日', style: theme.textTheme.bodySmall),
           const SizedBox(height: 24),
           _section(
             theme,
@@ -84,7 +84,16 @@ class PrivacyPolicyPage extends StatelessWidget {
           ),
           _section(
             theme,
-            '9. 分析ツール',
+            '9. アプリが使用する権限',
+            '本アプリは、機能の提供のために以下の端末権限を利用します。\n\n'
+                '- カメラ: パートナーリンク時のQRコード読み取りのみに使用します。'
+                '画像の保存や送信、その他の目的での利用は一切行いません。\n'
+                '- インターネット: Supabase（クラウドサービス）との通信に使用します。\n\n'
+                '権限の許可・拒否は、端末の設定からいつでも変更できます。',
+          ),
+          _section(
+            theme,
+            '10. 分析ツール',
             '本アプリでは、アプリの利用状況を把握し機能改善に役立てるため、'
                 'Firebase Analytics（Google LLC 提供）を使用しています。\n\n'
                 '収集する情報:\n'
@@ -98,19 +107,19 @@ class PrivacyPolicyPage extends StatelessWidget {
           ),
           _section(
             theme,
-            '10. お子様のプライバシー',
+            '11. お子様のプライバシー',
             '本アプリは13歳未満のお子様を対象としておらず、'
                 '13歳未満の方から意図的に個人情報を収集することはありません。',
           ),
           _section(
             theme,
-            '11. ポリシーの変更',
+            '12. ポリシーの変更',
             '本ポリシーは予告なく変更される場合があります。'
                 '重要な変更がある場合は、アプリ内でお知らせします。',
           ),
           _section(
             theme,
-            '12. お問い合わせ',
+            '13. お問い合わせ',
             '本ポリシーに関するご質問は、下記メールアドレスまでお問い合わせください。\n\n'
                 'yohei.yamasaki.yayo1@gmail.com',
           ),
