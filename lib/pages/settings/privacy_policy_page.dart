@@ -112,7 +112,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             theme,
             '12. お問い合わせ',
             '本ポリシーに関するご質問は、下記メールアドレスまでお問い合わせください。\n\n'
-                'seppan-support@yayo1.com',
+                'yohei.yamasaki.yayo1@gmail.com',
           ),
           const SizedBox(height: 32),
         ],
