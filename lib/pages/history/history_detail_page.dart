@@ -103,10 +103,27 @@ class HistoryDetailPage extends ConsumerWidget {
                     onPressed: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => ExpenseInputPage(editExpense: expense),
+                          builder: (_) =>
+                              ExpenseInputPage(editExpense: expense),
                         ),
                       );
+                      // Refresh everything that could reflect an edit:
+                      // detail view (this page), home previews, monthly
+                      // breakdown / balance summaries, and both HistoryPage
+                      // instances (/history tab + /history-view root push)
+                      // via the version-bump signal.
+                      //
+                      // ExpenseInputPage._submit() already does this on
+                      // successful save, but we re-invalidate here as a
+                      // safety net — harmless if the user just cancelled
+                      // (nothing changed in the DB), essential if the
+                      // listener timing is off (e.g. HistoryPage widget
+                      // was not mounted when the save fired).
                       ref.invalidate(expenseDetailProvider(expenseId));
+                      ref.invalidate(recentExpensesProvider);
+                      ref.invalidate(balanceSummaryProvider);
+                      ref.invalidate(categoryBreakdownProvider);
+                      ref.read(expenseDataVersionProvider.notifier).state++;
                     },
                   ),
                 ),
