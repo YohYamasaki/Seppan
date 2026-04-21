@@ -60,6 +60,10 @@ ThemeData seppanLightTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
+        // Match FilledButton's default height for visual parity when
+        // ElevatedButton and OutlinedButton sit next to each other
+        // (e.g. edit + delete buttons on the expense detail page).
+        minimumSize: const Size.fromHeight(48),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -67,6 +71,7 @@ ThemeData seppanLightTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
+        minimumSize: const Size.fromHeight(48),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(

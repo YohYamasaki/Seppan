@@ -110,7 +110,6 @@ class PartnershipManagePage extends ConsumerWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
                     side: const BorderSide(color: Colors.red),
-                    minimumSize: const Size.fromHeight(48),
                   ),
                   icon: const Icon(Icons.link_off),
                   label: const Text('パートナーシップを解除'),

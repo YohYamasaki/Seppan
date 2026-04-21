@@ -876,9 +876,6 @@ class _AmountInputSheetState extends State<_AmountInputSheet> {
           const Gap(24),
           FilledButton(
             onPressed: isValid ? () => Navigator.pop(context, _myBurden) : null,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
             child: const Text('確定', style: TextStyle(fontSize: 16)),
           ),
         ],

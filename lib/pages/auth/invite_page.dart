@@ -298,9 +298,6 @@ class _InvitePageState extends ConsumerState<InvitePage> {
             icon: const Icon(Icons.qr_code_scanner),
             label: const Text('パートナーのQRコードをスキャン'),
             onPressed: () => context.push('/invite/qr-scan'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
           ),
           if (widget.showScaffold) ...[
             const Gap(16),
