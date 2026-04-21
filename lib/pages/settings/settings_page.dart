@@ -201,17 +201,18 @@ class SettingsPage extends ConsumerWidget {
     }
 
     try {
-      final csvContent = await File(result.files.single.path!).readAsString();
-      final parsed = CsvService.parseExpenses(
+      final csvContent =
+          await File(result.files.single.path!).readAsString(encoding: utf8);
+      final parseResult = CsvService.parseExpenses(
         csvContent: csvContent,
         nameToUserId: nameToUserId,
       );
 
-      if (parsed.isEmpty) {
+      if (parseResult.parsed.isEmpty && parseResult.skipped == 0) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('インポートするデータがありません')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('インポートするデータがありません')),
+          );
         }
         return;
       }
@@ -224,68 +225,191 @@ class SettingsPage extends ConsumerWidget {
         existingKeys.add('${e.date.toIso8601String()}|${e.paidBy}|${e.amount}');
       }
       var duplicateCount = 0;
-      for (final data in parsed) {
+      for (final data in parseResult.parsed) {
         final key =
             '${(data['date'] as DateTime).toIso8601String()}|${data['paidBy']}|${data['amount']}';
         if (existingKeys.contains(key)) duplicateCount++;
       }
 
-      final duplicateWarning = duplicateCount > 0
-          ? '\n\n⚠ ${parsed.length}件中${duplicateCount}件が既存データと重複している可能性があります。'
-          : '';
-
-      final confirm = await showDialog<bool>(
+      if (!context.mounted) return;
+      final confirm = await _showImportConfirmDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('インポート確認'),
-          content: Text(
-            '${parsed.length}件のデータをインポートしますか？\n既存の履歴はそのまま保持されます。$duplicateWarning',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('キャンセル'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('インポート'),
-            ),
-          ],
-        ),
+        parseResult: parseResult,
+        duplicateCount: duplicateCount,
       );
       if (confirm != true) return;
 
-      for (final data in parsed) {
-        await repo.addExpense(
-          Expense(
-            id: '',
-            partnershipId: partnership.id,
-            paidBy: data['paidBy'] as String,
-            amount: data['amount'] as int,
-            currency: data['currency'] as String,
-            ratio: data['ratio'] as double,
-            date: data['date'] as DateTime,
-            category: data['category'] as String,
-            memo: data['memo'] as String,
-            createdAt: DateTime.now(),
-          ),
-        );
+      // Track per-row import results.
+      var successCount = 0;
+      final failures = <String, int>{}; // reason → count
+      for (final data in parseResult.parsed) {
+        try {
+          await repo.addExpense(
+            Expense(
+              id: '',
+              partnershipId: partnership.id,
+              paidBy: data['paidBy'] as String,
+              amount: data['amount'] as int,
+              currency: data['currency'] as String,
+              ratio: data['ratio'] as double,
+              date: data['date'] as DateTime,
+              category: data['category'] as String,
+              memo: data['memo'] as String,
+              createdAt: DateTime.now(),
+            ),
+          );
+          successCount++;
+        } catch (e) {
+          failures.update(
+            e.toString(),
+            (count) => count + 1,
+            ifAbsent: () => 1,
+          );
+        }
       }
 
       ref.read(expenseDataVersionProvider.notifier).state++;
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${parsed.length}件をインポートしました')));
+        await _showImportResultDialog(
+          context: context,
+          successCount: successCount,
+          skippedInParse: parseResult.skipReasons,
+          saveFailures: failures,
+        );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('インポートに失敗しました: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('インポートに失敗しました: $e')),
+        );
       }
     }
+  }
+
+  /// Confirmation dialog shown before importing — displays how many rows
+  /// will be imported and how many were skipped during parsing.
+  Future<bool?> _showImportConfirmDialog({
+    required BuildContext context,
+    required CsvParseResult parseResult,
+    required int duplicateCount,
+  }) {
+    final skipped = parseResult.skipped;
+    final parsed = parseResult.parsed.length;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('インポート確認'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('$parsed 件のデータをインポートします。'),
+              const SizedBox(height: 8),
+              const Text('既存の履歴はそのまま保持されます。'),
+              if (duplicateCount > 0) ...[
+                const SizedBox(height: 12),
+                Text(
+                  '⚠ $parsed 件中 $duplicateCount 件が既存データと'
+                  '重複している可能性があります。',
+                  style: const TextStyle(color: Colors.orange),
+                ),
+              ],
+              if (skipped > 0) ...[
+                const SizedBox(height: 12),
+                Text(
+                  '$skipped 件は形式不正のためスキップされます:',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                ...parseResult.skipReasons.entries.map((e) => Padding(
+                      padding: const EdgeInsets.only(left: 8, top: 2),
+                      child: Text('・${e.key}（${e.value.length} 件）'),
+                    )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('インポート'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Result dialog shown after the import completes — shows success
+  /// count and any per-row failures (parse-skipped + save-failed).
+  Future<void> _showImportResultDialog({
+    required BuildContext context,
+    required int successCount,
+    required Map<String, List<int>> skippedInParse,
+    required Map<String, int> saveFailures,
+  }) {
+    final totalSkipped = skippedInParse.values
+        .fold<int>(0, (sum, list) => sum + list.length);
+    final totalFailed =
+        saveFailures.values.fold<int>(0, (sum, count) => sum + count);
+    final totalErrors = totalSkipped + totalFailed;
+
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('インポート結果'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '✓ $successCount 件のインポートに成功しました',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (totalErrors > 0) ...[
+                const SizedBox(height: 12),
+                Text(
+                  '✗ $totalErrors 件は取り込めませんでした',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  '内訳:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                ...skippedInParse.entries.map((e) => Padding(
+                      padding: const EdgeInsets.only(left: 8, top: 2),
+                      child: Text('・${e.key}（${e.value.length} 件）'),
+                    )),
+                ...saveFailures.entries.map((e) => Padding(
+                      padding: const EdgeInsets.only(left: 8, top: 2),
+                      child: Text('・保存失敗: ${e.key}（${e.value} 件）'),
+                    )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Info dialog shown before the file picker. Explains the required CSV

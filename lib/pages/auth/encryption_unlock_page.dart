@@ -37,7 +37,7 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
     final partnership = await ref.read(currentPartnershipProvider.future);
     if (user == null || partnership == null) return;
 
-    final success = await ref
+    final result = await ref
         .read(encryptionKeyNotifierProvider.notifier)
         .unlockWithPassword(
           partnershipId: partnership.id,
@@ -47,17 +47,38 @@ class _EncryptionUnlockPageState extends ConsumerState<EncryptionUnlockPage> {
 
     if (!mounted) return;
 
-    if (success) {
-      // Resume interrupted re-encryption if a pending old key exists
-      await _resumeReencryptionIfNeeded(partnership, user.id);
-      if (!mounted) return;
-      context.go('/home');
-    } else {
-      setState(() => _unlocking = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('パスワードが正しくありません')));
+    switch (result) {
+      case UnlockSuccess():
+        // Resume interrupted re-encryption if a pending old key exists
+        await _resumeReencryptionIfNeeded(partnership, user.id);
+        if (!mounted) return;
+        context.go('/home');
+      case UnlockWrongPassword():
+        setState(() => _unlocking = false);
+        _showError('パスワードが正しくありません。もう一度お試しください。');
+      case UnlockNoWrappedKey():
+        setState(() => _unlocking = false);
+        _showError(
+          '暗号化鍵が見つかりません。パートナーシップの設定が完了していない可能性があります。',
+        );
+      case UnlockNetworkError():
+        setState(() => _unlocking = false);
+        _showError(
+          'サーバーに接続できませんでした。ネットワーク接続を確認してお試しください。',
+        );
+      case UnlockUnexpectedError(:final detail):
+        setState(() => _unlocking = false);
+        _showError('ロック解除に失敗しました: $detail');
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 5),
+      ),
+    );
   }
 
   /// If a previous re-encryption was interrupted (app crash during key

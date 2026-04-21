@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ (API 31+) data extraction rules.
+
+  Explicitly denies both cloud backup and device-to-device transfer of
+  app data. Seppan stores wrapped encryption keys in flutter_secure_storage
+  and encryption caches in shared_prefs — these must not leave the device
+  via Google One backup or "restore from another device" flows.
+-->
+<data-extraction-rules>
+  <cloud-backup>
+    <exclude domain="root" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+    <exclude domain="file" />
+  </cloud-backup>
+  <device-transfer>
+    <exclude domain="root" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+    <exclude domain="file" />
+  </device-transfer>
+</data-extraction-rules>

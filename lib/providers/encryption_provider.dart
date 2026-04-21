@@ -5,12 +5,49 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'package:cryptography/cryptography.dart';
+
 import '../repositories/encryption_key_repository.dart';
 import '../services/encryption_service.dart';
 import 'auth_provider.dart';
 import 'partnership_provider.dart';
 
 part 'encryption_provider.g.dart';
+
+/// Result of an unlock attempt with a specific failure reason.
+/// Use [UnlockResult.success] for success, or one of the error variants
+/// so the UI can display a precise Japanese error message.
+sealed class UnlockResult {
+  const UnlockResult();
+  const factory UnlockResult.success() = UnlockSuccess;
+  const factory UnlockResult.wrongPassword() = UnlockWrongPassword;
+  const factory UnlockResult.noWrappedKey() = UnlockNoWrappedKey;
+  const factory UnlockResult.networkError(String detail) = UnlockNetworkError;
+  const factory UnlockResult.unexpectedError(String detail) =
+      UnlockUnexpectedError;
+}
+
+class UnlockSuccess extends UnlockResult {
+  const UnlockSuccess();
+}
+
+class UnlockWrongPassword extends UnlockResult {
+  const UnlockWrongPassword();
+}
+
+class UnlockNoWrappedKey extends UnlockResult {
+  const UnlockNoWrappedKey();
+}
+
+class UnlockNetworkError extends UnlockResult {
+  const UnlockNetworkError(this.detail);
+  final String detail;
+}
+
+class UnlockUnexpectedError extends UnlockResult {
+  const UnlockUnexpectedError(this.detail);
+  final String detail;
+}
 
 @riverpod
 EncryptionKeyRepository encryptionKeyRepository(Ref ref) {
@@ -112,15 +149,32 @@ class EncryptionKeyNotifier extends _$EncryptionKeyNotifier {
     state = rawKey;
   }
 
-  /// パスワードで鍵をアンロック
-  Future<bool> unlockWithPassword({
+  /// パスワードで鍵をアンロックし、失敗理由を区別した結果を返す。
+  ///
+  /// - [UnlockResult.success]: 成功
+  /// - [UnlockResult.wrongPassword]: MAC 検証失敗（パスワード不一致 or 破損）
+  /// - [UnlockResult.noWrappedKey]: サーバーにラップ鍵が存在しない
+  /// - [UnlockResult.networkError]: サーバー通信エラー
+  /// - [UnlockResult.unexpectedError]: その他の予期しないエラー
+  Future<UnlockResult> unlockWithPassword({
     required String partnershipId,
     required String userId,
     required String password,
   }) async {
     final repo = ref.read(encryptionKeyRepositoryProvider);
-    final data = await repo.getWrappedKey(partnershipId, userId);
-    if (data == null) return false;
+
+    final Map<String, dynamic>? data;
+    try {
+      data = await repo.getWrappedKey(partnershipId, userId);
+    } catch (e) {
+      debugPrint('[unlockWithPassword] getWrappedKey error: $e');
+      return UnlockResult.networkError(e.toString());
+    }
+
+    if (data == null) {
+      debugPrint('[unlockWithPassword] no wrapped key on server');
+      return const UnlockResult.noWrappedKey();
+    }
 
     try {
       final rawKey = await EncryptionService.unwrapKey(
@@ -131,9 +185,16 @@ class EncryptionKeyNotifier extends _$EncryptionKeyNotifier {
       );
       await _cacheKey(partnershipId, rawKey);
       state = rawKey;
-      return true;
-    } catch (_) {
-      return false;
+      return const UnlockResult.success();
+    } on SecretBoxAuthenticationError {
+      // MAC validation failed — wrong password or corrupted ciphertext.
+      // In practice this is almost always "wrong password" because the
+      // ciphertext is server-stored and unlikely to silently corrupt.
+      debugPrint('[unlockWithPassword] MAC auth failed (wrong password)');
+      return const UnlockResult.wrongPassword();
+    } catch (e) {
+      debugPrint('[unlockWithPassword] unexpected error: $e');
+      return UnlockResult.unexpectedError(e.toString());
     }
   }
 

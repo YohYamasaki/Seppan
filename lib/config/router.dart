@@ -82,12 +82,17 @@ GoRouter router(Ref ref) {
       final unlockCheck = ref.read(encryptionUnlockRequiredProvider);
       debugPrint('[router] redirect: loc=${state.matchedLocation}, '
           'user=${user != null}, profileLoading=${profile.isLoading}, '
+          'profileHasError=${profile.hasError}, '
           'hasProfile=${profile.valueOrNull != null}, '
           'unlockCheck=$unlockCheck');
+      // Treat profile fetch errors as "still loading" for redirect
+      // purposes — we don't want to push the user to /profile-setup
+      // based on a network error. The error itself is surfaced to the
+      // user via a Snackbar from app.dart's listener.
       final result = routerRedirect(
         location: state.matchedLocation,
         isLoggedIn: user != null,
-        isProfileLoading: profile.isLoading,
+        isProfileLoading: profile.isLoading || profile.hasError,
         hasProfile: profile.valueOrNull != null,
         needsEncryptionUnlock: unlockCheck.valueOrNull == true,
         isEncryptionCheckLoading: unlockCheck.isLoading,
