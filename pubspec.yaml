@@ -1,7 +1,7 @@
 name: seppan
 description: "割り勘・立て替え管理アプリ"
 publish_to: 'none'
-version: 1.0.0+2
+version: 1.0.0+3
 
 environment:
   sdk: ^3.11.4
