@@ -1,5 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Firebase Analytics includes AD_ID permission by default. Seppan does
+         not use advertising, so explicitly remove it to match the privacy
+         policy ("no advertising services"). -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove"/>
     <application
         android:label="Seppan"
         android:name="${applicationName}"
