@@ -272,10 +272,25 @@ GoRouter router(Ref ref) {
       // History as full-screen push route (from home "もっと見る").
       // Pushed on root navigator so back navigation returns to home,
       // unlike the /history tab which switches tabs in the shell.
+      //
+      // The `:id` child route exists so that pushing an expense detail
+      // from this flow stays on the root navigator (otherwise the push
+      // would target the in-shell `/history/:id` route and collide with
+      // the root navigator's existing HistoryPage, causing a GlobalKey
+      // reservation assertion failure).
       GoRoute(
         path: '/history-view',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const HistoryPage(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => HistoryDetailPage(
+              expenseId: state.pathParameters['id']!,
+            ),
+          ),
+        ],
       ),
 
       // Stats as full-screen push route (from home's category card).

@@ -228,7 +228,20 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                     selectionMode: _isSelecting,
                     onTap: _isSelecting
                         ? () => _toggleSelection(expense.id)
-                        : () => context.push('/history/${expense.id}'),
+                        : () {
+                            // Use the parent route matching the current
+                            // location so that back navigation stays
+                            // consistent (e.g. /history-view when pushed
+                            // from home, /history when on the history tab).
+                            // Using the wrong parent causes a navigator
+                            // GlobalKey collision on push.
+                            final loc =
+                                GoRouterState.of(context).matchedLocation;
+                            final base = loc.startsWith('/history-view')
+                                ? '/history-view'
+                                : '/history';
+                            context.push('$base/${expense.id}');
+                          },
                     onLongPress: () => _toggleSelection(expense.id),
                   );
                 },
