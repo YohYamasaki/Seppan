@@ -75,9 +75,17 @@ final currentUserProvider = AutoDisposeProvider<User?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentUserRef = AutoDisposeProviderRef<User?>;
-String _$currentProfileHash() => r'6dd7354c7cac691dc11febfdfd82b078723b5be5';
+String _$currentProfileHash() => r'0adcb81f3611214de3c5f722ae087944f17a0f09';
 
-/// See also [currentProfile].
+/// Current user's profile.
+///
+/// Returns `null` if the user has not yet created a profile (row not
+/// found). For all other failures — network errors, auth errors,
+/// server errors — throws a [ProfileFetchException] with a Japanese
+/// message so the UI can display it to the user without mis-identifying
+/// the state as "profile not yet created".
+///
+/// Copied from [currentProfile].
 @ProviderFor(currentProfile)
 final currentProfileProvider = AutoDisposeFutureProvider<Profile?>.internal(
   currentProfile,
