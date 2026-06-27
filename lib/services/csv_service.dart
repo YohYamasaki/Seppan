@@ -29,6 +29,46 @@ class CsvParseResult {
 class CsvService {
   static final _dateFormat = DateFormat('yyyy-MM-dd');
 
+  /// Maps CSV header labels to canonical field keys. Parsing is
+  /// header-name driven (not positional) so that:
+  ///   * Column order can change without breaking import.
+  ///   * Columns this version doesn't recognise are simply ignored
+  ///     (forward compatibility — a CSV exported by a future version
+  ///     with extra columns still imports here).
+  ///   * Optional columns missing from an older CSV fall back to a
+  ///     default (backward compatibility).
+  ///
+  /// To keep already-shipped positional parsers working, new columns
+  /// are *appended* to the export header (see [_exportHeader]) — never
+  /// inserted in the middle.
+  static const Map<String, String> _headerAliases = {
+    '日付': 'date',
+    '支払者': 'payer',
+    '金額': 'amount',
+    '通貨': 'currency',
+    '負担率': 'ratio',
+    'カテゴリ': 'category',
+    '購入場所': 'place',
+    'メモ': 'memo',
+  };
+
+  /// Header row used on export. Append-only — do not reorder/remove
+  /// columns, to preserve compatibility with older clients that read by
+  /// position.
+  static const List<String> _exportHeader = [
+    '日付',
+    '支払者',
+    '金額',
+    '通貨',
+    '負担率',
+    'カテゴリ',
+    'メモ',
+    '購入場所',
+  ];
+
+  /// Canonical field keys that must be present for a row to be importable.
+  static const List<String> _requiredFields = ['date', 'payer', 'amount'];
+
   /// Reasonable upper bound on a single expense amount (in JPY).
   /// Prevents integer overflow / DoS via pathological CSV values.
   static const int _maxAmount = 100000000; // 100,000,000 JPY
@@ -47,9 +87,8 @@ class CsvService {
     required List<Expense> expenses,
     required Map<String, String> userNames,
   }) async {
-    final header = ['日付', '支払者', '金額', '通貨', '負担率', 'カテゴリ', 'メモ'];
     final rows = <List<String>>[
-      header,
+      _exportHeader,
       ...expenses.map((e) => [
             _dateFormat.format(e.date),
             userNames[e.paidBy] ?? e.paidBy,
@@ -58,6 +97,7 @@ class CsvService {
             e.ratio.toString(),
             e.category,
             e.memo,
+            e.place,
           ]),
     ];
 
@@ -79,14 +119,17 @@ class CsvService {
   /// Parse CSV content into a [CsvParseResult] including per-row
   /// validation failures.
   ///
-  /// Rows are skipped (with a reason recorded) if any of the following
-  /// is true:
-  ///   * Fewer than 7 columns
+  /// Columns are matched by header name (see [_headerAliases]), not by
+  /// position, so unknown columns are ignored and optional columns may
+  /// be absent. A row is skipped (with a reason recorded) if any of the
+  /// following is true:
+  ///   * A required field's cell is empty/missing
   ///   * Unknown payer name
-  ///   * Invalid date format
-  ///   * Date out of plausible range (before 1970 or more than 1 year
-  ///     in the future)
+  ///   * Invalid date format / out of plausible range
   ///   * Non-positive amount or amount exceeding the upper bound
+  ///
+  /// If the header itself lacks any required column, all data rows are
+  /// skipped under a single reason.
   static CsvParseResult parseExpenses({
     required String csvContent,
     required Map<String, String> nameToUserId,
@@ -109,18 +152,48 @@ class CsvService {
       skipReasons.putIfAbsent(reason, () => []).add(rowNum);
     }
 
+    // Build a canonical-field → column-index map from the header row.
+    // Unrecognised header labels are simply not mapped (= ignored).
+    final colIndex = <String, int>{};
+    final header = rows[0];
+    for (var c = 0; c < header.length; c++) {
+      final field = _headerAliases[header[c].toString().trim()];
+      if (field != null) colIndex.putIfAbsent(field, () => c);
+    }
+
+    // If any required column is missing, no row can be imported.
+    final missing =
+        _requiredFields.where((f) => !colIndex.containsKey(f)).toList();
+    if (missing.isNotEmpty) {
+      final labels = _headerAliases.entries
+          .where((e) => missing.contains(e.value))
+          .map((e) => e.key)
+          .join('/');
+      for (var i = 1; i < rows.length; i++) {
+        recordSkip(i, '必須列（$labels）が見つかりません');
+      }
+      return CsvParseResult(
+        parsed: parsed,
+        skipped: rows.length - 1,
+        skipReasons: skipReasons,
+      );
+    }
+
+    // Reads a cell by canonical field name, or null if the column is
+    // absent / the row is too short.
+    String? cellOf(List<dynamic> row, String field) {
+      final idx = colIndex[field];
+      if (idx == null || idx >= row.length) return null;
+      return row[idx].toString();
+    }
+
     // Skip header row (index 0)
     for (var i = 1; i < rows.length; i++) {
       final row = rows[i];
       final rowNum = i; // 1-indexed, excluding header
 
-      if (row.length < 7) {
-        recordSkip(rowNum, '列数が不足しています');
-        continue;
-      }
-
       // Payer name → userId
-      final name = row[1].toString();
+      final name = cellOf(row, 'payer') ?? '';
       final userId = nameToUserId[name];
       if (userId == null) {
         recordSkip(rowNum, '未知の支払者「$name」');
@@ -128,7 +201,7 @@ class CsvService {
       }
 
       // Amount validation
-      final amount = int.tryParse(row[2].toString());
+      final amount = int.tryParse(cellOf(row, 'amount') ?? '');
       if (amount == null) {
         recordSkip(rowNum, '金額が数値ではありません');
         continue;
@@ -145,7 +218,7 @@ class CsvService {
       // Date validation
       final DateTime date;
       try {
-        date = _dateFormat.parseStrict(row[0].toString());
+        date = _dateFormat.parseStrict(cellOf(row, 'date') ?? '');
       } on FormatException {
         recordSkip(rowNum, '日付の形式が不正です（YYYY-MM-DD 形式が必要）');
         continue;
@@ -156,16 +229,17 @@ class CsvService {
       }
 
       final ratio =
-          (double.tryParse(row[4].toString()) ?? 0.5).clamp(0.0, 1.0);
+          (double.tryParse(cellOf(row, 'ratio') ?? '') ?? 0.5).clamp(0.0, 1.0);
 
       parsed.add({
         'date': date,
         'paidBy': userId,
         'amount': amount,
-        'currency': row[3].toString(),
+        'currency': cellOf(row, 'currency') ?? 'JPY',
         'ratio': ratio,
-        'category': row[5].toString(),
-        'memo': row[6].toString(),
+        'category': cellOf(row, 'category') ?? '',
+        'place': cellOf(row, 'place') ?? '',
+        'memo': cellOf(row, 'memo') ?? '',
       });
     }
 

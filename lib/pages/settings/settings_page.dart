@@ -254,6 +254,7 @@ class SettingsPage extends ConsumerWidget {
               ratio: data['ratio'] as double,
               date: data['date'] as DateTime,
               category: data['category'] as String,
+              place: data['place'] as String,
               memo: data['memo'] as String,
               createdAt: DateTime.now(),
             ),
@@ -445,7 +446,7 @@ class SettingsPage extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
-                  '列: 日付, 支払者, 金額, 通貨, 負担率, カテゴリ, メモ',
+                  '列: 日付, 支払者, 金額, 通貨, 負担率, カテゴリ, メモ, 購入場所',
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: 'monospace',
@@ -517,10 +518,10 @@ class SettingsPage extends ConsumerWidget {
     required String partnerName,
   }) async {
     // Use current profile names so the sample is ready-to-import as-is.
-    final csv = '日付,支払者,金額,通貨,負担率,カテゴリ,メモ\n'
-        '2026-04-01,$myName,1200,JPY,0.5,食費,ランチ\n'
-        '2026-04-03,$partnerName,3500,JPY,0.5,日用品,洗剤\n'
-        '2026-04-05,$myName,800,JPY,0.75,交通費,バス往復\n';
+    final csv = '日付,支払者,金額,通貨,負担率,カテゴリ,メモ,購入場所\n'
+        '2026-04-01,$myName,1200,JPY,0.5,食費,ランチ,カフェ\n'
+        '2026-04-03,$partnerName,3500,JPY,0.5,日用品,洗剤,ドラッグストア\n'
+        '2026-04-05,$myName,800,JPY,0.75,交通費,バス往復,\n';
 
     try {
       final saved = await FilePicker.platform.saveFile(

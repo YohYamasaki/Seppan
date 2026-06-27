@@ -255,15 +255,66 @@ void main() {
       expect(result.parsed, isEmpty);
     });
 
-    test('rows with fewer than 7 columns are skipped with reason', () {
+    test('truncated rows still import when required columns are present '
+        '(optional trailing columns default)', () {
+      // Header-name driven parsing: a row missing only the trailing
+      // optional columns (カテゴリ/メモ/購入場所) is imported, with those
+      // fields defaulted.
       final csv = '日付,支払者,金額,通貨,負担率,カテゴリ,メモ\r\n'
           '2024-01-15,Alice,1000,JPY,0.5';
       final result = CsvService.parseExpenses(
         csvContent: csv,
         nameToUserId: nameToUserId,
       );
+      expect(result.parsed, hasLength(1));
+      expect(result.parsed.first['category'], '');
+      expect(result.parsed.first['memo'], '');
+      expect(result.parsed.first['place'], '');
+    });
+
+    test('rows missing a required column value are skipped', () {
+      // Amount column exists in the header but the cell is empty.
+      final csv = '日付,支払者,金額,通貨,負担率,カテゴリ,メモ\r\n'
+          '2024-01-15,Alice,,JPY,0.5,食費,ランチ';
+      final result = CsvService.parseExpenses(
+        csvContent: csv,
+        nameToUserId: nameToUserId,
+      );
       expect(result.parsed, isEmpty);
-      expect(result.skipReasons.keys, contains('列数が不足しています'));
+      expect(result.skipReasons.keys, contains('金額が数値ではありません'));
+    });
+
+    test('columns matched by header name regardless of order; '
+        'unknown columns ignored', () {
+      // Reordered columns + an extra unknown column ("タグ"). The unknown
+      // column must be ignored and the rest mapped by header name.
+      final csv = '金額,日付,支払者,メモ,購入場所,タグ\r\n'
+          '1000,2024-01-15,Alice,ランチ,カフェ,おすすめ';
+      final result = CsvService.parseExpenses(
+        csvContent: csv,
+        nameToUserId: nameToUserId,
+      );
+      expect(result.parsed, hasLength(1));
+      final row = result.parsed.first;
+      expect(row['amount'], 1000);
+      expect(row['paidBy'], 'user-a-id');
+      expect(row['memo'], 'ランチ');
+      expect(row['place'], 'カフェ');
+    });
+
+    test('CSV missing a required column header skips all rows', () {
+      // No 金額 column at all.
+      final csv = '日付,支払者,カテゴリ,メモ\r\n'
+          '2024-01-15,Alice,食費,ランチ';
+      final result = CsvService.parseExpenses(
+        csvContent: csv,
+        nameToUserId: nameToUserId,
+      );
+      expect(result.parsed, isEmpty);
+      expect(
+        result.skipReasons.keys.any((k) => k.contains('必須列')),
+        isTrue,
+      );
     });
 
     test('unknown user names are skipped with specific reason', () {
