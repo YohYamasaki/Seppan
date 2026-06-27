@@ -89,6 +89,8 @@ class HistoryDetailPage extends ConsumerWidget {
                 const Gap(8),
                 if (expense.category.isNotEmpty)
                   _DetailRow(label: 'ジャンル', value: expense.category),
+                if (expense.place.isNotEmpty)
+                  _DetailRow(label: '購入場所', value: expense.place),
                 if (expense.memo.isNotEmpty)
                   _DetailRow(label: 'メモ', value: expense.memo),
 
@@ -123,6 +125,7 @@ class HistoryDetailPage extends ConsumerWidget {
                       ref.invalidate(recentExpensesProvider);
                       ref.invalidate(balanceSummaryProvider);
                       ref.invalidate(categoryBreakdownProvider);
+                      ref.invalidate(placeSuggestionsProvider);
                       ref.read(expenseDataVersionProvider.notifier).state++;
                     },
                   ),

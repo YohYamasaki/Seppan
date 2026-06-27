@@ -15,6 +15,7 @@ _Expense _$ExpenseFromJson(Map<String, dynamic> json) => _Expense(
   ratio: (json['ratio'] as num?)?.toDouble() ?? 0.5,
   date: DateTime.parse(json['date'] as String),
   category: json['category'] as String? ?? '',
+  place: json['place'] as String? ?? '',
   memo: json['memo'] as String? ?? '',
   createdAt: DateTime.parse(json['created_at'] as String),
 );
@@ -28,6 +29,7 @@ Map<String, dynamic> _$ExpenseToJson(_Expense instance) => <String, dynamic>{
   'ratio': instance.ratio,
   'date': instance.date.toIso8601String(),
   'category': instance.category,
+  'place': instance.place,
   'memo': instance.memo,
   'created_at': instance.createdAt.toIso8601String(),
 };

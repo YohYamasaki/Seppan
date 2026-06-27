@@ -31,3 +31,23 @@ Future<List<Expense>> recentExpenses(Ref ref) async {
 Future<Expense?> expenseDetail(Ref ref, String expenseId) async {
   return ref.watch(expenseRepositoryProvider).getExpense(expenseId);
 }
+
+/// Distinct, non-empty purchase places from past expenses, most recent
+/// first. Used to populate the place dropdown on the input screen.
+/// Decryption happens client-side, so suggestions are derived from the
+/// fully-decrypted expense list.
+@riverpod
+Future<List<String>> placeSuggestions(Ref ref) async {
+  final partnership = await ref.watch(currentPartnershipProvider.future);
+  if (partnership == null) return [];
+  final all =
+      await ref.watch(expenseRepositoryProvider).getAllExpenses(partnership.id);
+  final seen = <String>{};
+  final result = <String>[];
+  // getAllExpenses returns ascending order; reverse for most-recent-first.
+  for (final e in all.reversed) {
+    final p = e.place.trim();
+    if (p.isNotEmpty && seen.add(p)) result.add(p);
+  }
+  return result;
+}

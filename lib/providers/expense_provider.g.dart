@@ -183,5 +183,28 @@ class _ExpenseDetailProviderElement
   String get expenseId => (origin as ExpenseDetailProvider).expenseId;
 }
 
+String _$placeSuggestionsHash() => r'fabe722d75ad52d99476a8cec13d5374d6f3d0ef';
+
+/// Distinct, non-empty purchase places from past expenses, most recent
+/// first. Used to populate the place dropdown on the input screen.
+/// Decryption happens client-side, so suggestions are derived from the
+/// fully-decrypted expense list.
+///
+/// Copied from [placeSuggestions].
+@ProviderFor(placeSuggestions)
+final placeSuggestionsProvider =
+    AutoDisposeFutureProvider<List<String>>.internal(
+      placeSuggestions,
+      name: r'placeSuggestionsProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$placeSuggestionsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef PlaceSuggestionsRef = AutoDisposeFutureProviderRef<List<String>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

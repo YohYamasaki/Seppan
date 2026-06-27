@@ -25,6 +25,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _memoController = TextEditingController();
+  final _placeController = TextEditingController();
   DateTime _date = DateTime.now();
   String? _payerUserId;
   double _ratio = 0.5;
@@ -39,6 +40,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
     if (edit != null) {
       _amountController.text = edit.amount.toString();
       _memoController.text = edit.memo;
+      _placeController.text = edit.place;
       _date = edit.date;
       _payerUserId = edit.paidBy;
       _ratio = edit.ratio;
@@ -61,6 +63,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
   void dispose() {
     _amountController.dispose();
     _memoController.dispose();
+    _placeController.dispose();
     super.dispose();
   }
 
@@ -158,6 +161,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
         ratio: _ratio,
         date: _date,
         category: _category,
+        place: _placeController.text.trim(),
         memo: _memoController.text.trim(),
         createdAt: _isEditing ? widget.editExpense!.createdAt : DateTime.now(),
       );
@@ -170,6 +174,7 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
       ref.invalidate(recentExpensesProvider);
       ref.invalidate(balanceSummaryProvider);
       ref.invalidate(categoryBreakdownProvider);
+      ref.invalidate(placeSuggestionsProvider);
       ref.read(expenseDataVersionProvider.notifier).state++;
       if (mounted) context.pop();
     } catch (e) {
@@ -190,6 +195,8 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
     final partnership = ref.watch(currentPartnershipProvider).valueOrNull;
     final partnerProfile = ref.watch(partnerProfileProvider).valueOrNull;
     final categories = ref.watch(categoriesProvider);
+    final placeSuggestions =
+        ref.watch(placeSuggestionsProvider).valueOrNull ?? const <String>[];
 
     final myName = profile?.displayName ?? '自分';
     final myIconId = profile?.iconId ?? 1;
@@ -715,6 +722,26 @@ class _ExpenseInputPageState extends ConsumerState<ExpenseInputPage> {
                   ),
                 ),
                 error: (_, _) => const Text('カテゴリの読み込みに失敗しました'),
+              ),
+              const Gap(20),
+
+              // Purchase place — dropdown of past places with free input
+              const Text(
+                '購入場所（任意）',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Gap(8),
+              DropdownMenu<String>(
+                controller: _placeController,
+                expandedInsets: EdgeInsets.zero,
+                enableFilter: true,
+                requestFocusOnTap: true,
+                menuHeight: 300,
+                hintText: '過去の入力から選択 / 手入力',
+                leadingIcon: const Icon(Icons.place_outlined),
+                dropdownMenuEntries: placeSuggestions
+                    .map((p) => DropdownMenuEntry<String>(value: p, label: p))
+                    .toList(),
               ),
               const Gap(20),
 

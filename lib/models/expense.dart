@@ -14,6 +14,7 @@ abstract class Expense with _$Expense {
     @Default(0.5) double ratio,
     required DateTime date,
     @Default('') String category,
+    @Default('') String place,
     @Default('') String memo,
     required DateTime createdAt,
   }) = _Expense;

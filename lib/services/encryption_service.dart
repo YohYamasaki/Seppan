@@ -211,12 +211,14 @@ class EncryptionService {
     required double ratio,
     required String category,
     required String memo,
+    String place = '',
   }) async {
     final plaintext = jsonEncode({
       'amount': amount,
       'currency': currency,
       'ratio': ratio,
       'category': category,
+      'place': place,
       'memo': memo,
     });
 

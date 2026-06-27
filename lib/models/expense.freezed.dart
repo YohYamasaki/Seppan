@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Expense {
 
- String get id; String get partnershipId; String get paidBy; int get amount; String get currency; double get ratio; DateTime get date; String get category; String get memo; DateTime get createdAt;
+ String get id; String get partnershipId; String get paidBy; int get amount; String get currency; double get ratio; DateTime get date; String get category; String get place; String get memo; DateTime get createdAt;
 /// Create a copy of Expense
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ExpenseCopyWith<Expense> get copyWith => _$ExpenseCopyWithImpl<Expense>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Expense&&(identical(other.id, id) || other.id == id)&&(identical(other.partnershipId, partnershipId) || other.partnershipId == partnershipId)&&(identical(other.paidBy, paidBy) || other.paidBy == paidBy)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.ratio, ratio) || other.ratio == ratio)&&(identical(other.date, date) || other.date == date)&&(identical(other.category, category) || other.category == category)&&(identical(other.memo, memo) || other.memo == memo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Expense&&(identical(other.id, id) || other.id == id)&&(identical(other.partnershipId, partnershipId) || other.partnershipId == partnershipId)&&(identical(other.paidBy, paidBy) || other.paidBy == paidBy)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.ratio, ratio) || other.ratio == ratio)&&(identical(other.date, date) || other.date == date)&&(identical(other.category, category) || other.category == category)&&(identical(other.place, place) || other.place == place)&&(identical(other.memo, memo) || other.memo == memo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,partnershipId,paidBy,amount,currency,ratio,date,category,memo,createdAt);
+int get hashCode => Object.hash(runtimeType,id,partnershipId,paidBy,amount,currency,ratio,date,category,place,memo,createdAt);
 
 @override
 String toString() {
-  return 'Expense(id: $id, partnershipId: $partnershipId, paidBy: $paidBy, amount: $amount, currency: $currency, ratio: $ratio, date: $date, category: $category, memo: $memo, createdAt: $createdAt)';
+  return 'Expense(id: $id, partnershipId: $partnershipId, paidBy: $paidBy, amount: $amount, currency: $currency, ratio: $ratio, date: $date, category: $category, place: $place, memo: $memo, createdAt: $createdAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ExpenseCopyWith<$Res>  {
   factory $ExpenseCopyWith(Expense value, $Res Function(Expense) _then) = _$ExpenseCopyWithImpl;
 @useResult
 $Res call({
- String id, String partnershipId, String paidBy, int amount, String currency, double ratio, DateTime date, String category, String memo, DateTime createdAt
+ String id, String partnershipId, String paidBy, int amount, String currency, double ratio, DateTime date, String category, String place, String memo, DateTime createdAt
 });
 
 
@@ -65,7 +65,7 @@ class _$ExpenseCopyWithImpl<$Res>
 
 /// Create a copy of Expense
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? partnershipId = null,Object? paidBy = null,Object? amount = null,Object? currency = null,Object? ratio = null,Object? date = null,Object? category = null,Object? memo = null,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? partnershipId = null,Object? paidBy = null,Object? amount = null,Object? currency = null,Object? ratio = null,Object? date = null,Object? category = null,Object? place = null,Object? memo = null,Object? createdAt = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,partnershipId: null == partnershipId ? _self.partnershipId : partnershipId // ignore: cast_nullable_to_non_nullable
@@ -75,6 +75,7 @@ as int,currency: null == currency ? _self.currency : currency // ignore: cast_nu
 as String,ratio: null == ratio ? _self.ratio : ratio // ignore: cast_nullable_to_non_nullable
 as double,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String,place: null == place ? _self.place : place // ignore: cast_nullable_to_non_nullable
 as String,memo: null == memo ? _self.memo : memo // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
@@ -162,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String partnershipId,  String paidBy,  int amount,  String currency,  double ratio,  DateTime date,  String category,  String memo,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String partnershipId,  String paidBy,  int amount,  String currency,  double ratio,  DateTime date,  String category,  String place,  String memo,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Expense() when $default != null:
-return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.currency,_that.ratio,_that.date,_that.category,_that.memo,_that.createdAt);case _:
+return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.currency,_that.ratio,_that.date,_that.category,_that.place,_that.memo,_that.createdAt);case _:
   return orElse();
 
 }
@@ -183,10 +184,10 @@ return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.cur
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String partnershipId,  String paidBy,  int amount,  String currency,  double ratio,  DateTime date,  String category,  String memo,  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String partnershipId,  String paidBy,  int amount,  String currency,  double ratio,  DateTime date,  String category,  String place,  String memo,  DateTime createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _Expense():
-return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.currency,_that.ratio,_that.date,_that.category,_that.memo,_that.createdAt);case _:
+return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.currency,_that.ratio,_that.date,_that.category,_that.place,_that.memo,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +204,10 @@ return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.cur
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String partnershipId,  String paidBy,  int amount,  String currency,  double ratio,  DateTime date,  String category,  String memo,  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String partnershipId,  String paidBy,  int amount,  String currency,  double ratio,  DateTime date,  String category,  String place,  String memo,  DateTime createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Expense() when $default != null:
-return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.currency,_that.ratio,_that.date,_that.category,_that.memo,_that.createdAt);case _:
+return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.currency,_that.ratio,_that.date,_that.category,_that.place,_that.memo,_that.createdAt);case _:
   return null;
 
 }
@@ -218,7 +219,7 @@ return $default(_that.id,_that.partnershipId,_that.paidBy,_that.amount,_that.cur
 @JsonSerializable()
 
 class _Expense implements Expense {
-  const _Expense({required this.id, required this.partnershipId, required this.paidBy, required this.amount, this.currency = 'JPY', this.ratio = 0.5, required this.date, this.category = '', this.memo = '', required this.createdAt});
+  const _Expense({required this.id, required this.partnershipId, required this.paidBy, required this.amount, this.currency = 'JPY', this.ratio = 0.5, required this.date, this.category = '', this.place = '', this.memo = '', required this.createdAt});
   factory _Expense.fromJson(Map<String, dynamic> json) => _$ExpenseFromJson(json);
 
 @override final  String id;
@@ -229,6 +230,7 @@ class _Expense implements Expense {
 @override@JsonKey() final  double ratio;
 @override final  DateTime date;
 @override@JsonKey() final  String category;
+@override@JsonKey() final  String place;
 @override@JsonKey() final  String memo;
 @override final  DateTime createdAt;
 
@@ -245,16 +247,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Expense&&(identical(other.id, id) || other.id == id)&&(identical(other.partnershipId, partnershipId) || other.partnershipId == partnershipId)&&(identical(other.paidBy, paidBy) || other.paidBy == paidBy)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.ratio, ratio) || other.ratio == ratio)&&(identical(other.date, date) || other.date == date)&&(identical(other.category, category) || other.category == category)&&(identical(other.memo, memo) || other.memo == memo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Expense&&(identical(other.id, id) || other.id == id)&&(identical(other.partnershipId, partnershipId) || other.partnershipId == partnershipId)&&(identical(other.paidBy, paidBy) || other.paidBy == paidBy)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.ratio, ratio) || other.ratio == ratio)&&(identical(other.date, date) || other.date == date)&&(identical(other.category, category) || other.category == category)&&(identical(other.place, place) || other.place == place)&&(identical(other.memo, memo) || other.memo == memo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,partnershipId,paidBy,amount,currency,ratio,date,category,memo,createdAt);
+int get hashCode => Object.hash(runtimeType,id,partnershipId,paidBy,amount,currency,ratio,date,category,place,memo,createdAt);
 
 @override
 String toString() {
-  return 'Expense(id: $id, partnershipId: $partnershipId, paidBy: $paidBy, amount: $amount, currency: $currency, ratio: $ratio, date: $date, category: $category, memo: $memo, createdAt: $createdAt)';
+  return 'Expense(id: $id, partnershipId: $partnershipId, paidBy: $paidBy, amount: $amount, currency: $currency, ratio: $ratio, date: $date, category: $category, place: $place, memo: $memo, createdAt: $createdAt)';
 }
 
 
@@ -265,7 +267,7 @@ abstract mixin class _$ExpenseCopyWith<$Res> implements $ExpenseCopyWith<$Res> {
   factory _$ExpenseCopyWith(_Expense value, $Res Function(_Expense) _then) = __$ExpenseCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String partnershipId, String paidBy, int amount, String currency, double ratio, DateTime date, String category, String memo, DateTime createdAt
+ String id, String partnershipId, String paidBy, int amount, String currency, double ratio, DateTime date, String category, String place, String memo, DateTime createdAt
 });
 
 
@@ -282,7 +284,7 @@ class __$ExpenseCopyWithImpl<$Res>
 
 /// Create a copy of Expense
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? partnershipId = null,Object? paidBy = null,Object? amount = null,Object? currency = null,Object? ratio = null,Object? date = null,Object? category = null,Object? memo = null,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? partnershipId = null,Object? paidBy = null,Object? amount = null,Object? currency = null,Object? ratio = null,Object? date = null,Object? category = null,Object? place = null,Object? memo = null,Object? createdAt = null,}) {
   return _then(_Expense(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,partnershipId: null == partnershipId ? _self.partnershipId : partnershipId // ignore: cast_nullable_to_non_nullable
@@ -292,6 +294,7 @@ as int,currency: null == currency ? _self.currency : currency // ignore: cast_nu
 as String,ratio: null == ratio ? _self.ratio : ratio // ignore: cast_nullable_to_non_nullable
 as double,date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String,place: null == place ? _self.place : place // ignore: cast_nullable_to_non_nullable
 as String,memo: null == memo ? _self.memo : memo // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,

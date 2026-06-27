@@ -29,6 +29,7 @@ class ExpenseRepository {
       currency: expense.currency,
       ratio: expense.ratio,
       category: expense.category,
+      place: expense.place,
       memo: expense.memo,
     );
 
@@ -91,6 +92,7 @@ class ExpenseRepository {
       currency: expense.currency,
       ratio: expense.ratio,
       category: expense.category,
+      place: expense.place,
       memo: expense.memo,
     );
 
@@ -167,6 +169,7 @@ class ExpenseRepository {
         currency: fields['currency'] as String? ?? 'JPY',
         ratio: (fields['ratio'] as num).toDouble(),
         category: fields['category'] as String? ?? '',
+        place: fields['place'] as String? ?? '',
         memo: fields['memo'] as String? ?? '',
       );
 
@@ -211,6 +214,7 @@ class ExpenseRepository {
         currency: fields['currency'] as String? ?? 'JPY',
         ratio: (fields['ratio'] as num).toDouble(),
         category: fields['category'] as String? ?? '',
+        place: fields['place'] as String? ?? '',
         memo: fields['memo'] as String? ?? '',
       );
 
@@ -341,6 +345,7 @@ class ExpenseRepository {
       ratio: (fields['ratio'] as num).toDouble(),
       date: DateTime.parse(row['date'] as String),
       category: fields['category'] as String? ?? '',
+      place: fields['place'] as String? ?? '',
       memo: fields['memo'] as String? ?? '',
       createdAt: DateTime.parse(row['created_at'] as String),
     );

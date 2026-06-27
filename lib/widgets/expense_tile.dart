@@ -46,6 +46,7 @@ class ExpenseTile extends StatelessWidget {
       subtitle: Text(
         '${formatJpy(expense.amount)} (${ratioLabel(expense.ratio)}) '
         '${expense.category.isNotEmpty ? expense.category : ''}'
+        '${expense.place.isNotEmpty ? ' @${expense.place}' : ''}'
         '${expense.memo.isNotEmpty ? ' - ${expense.memo}' : ''}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
